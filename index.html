@@ -93,6 +93,10 @@
     table{font-size:11px;}
     th, td{border-color:#999;}
     tr:hover td{background:none;}
+
+    body.printing-detail .wrap{display:none !important;}
+    body.printing-detail #detailOverlay{display:flex !important;position:static !important;background:none !important;inset:auto !important;}
+    body.printing-detail #detailBox{border:none !important;box-shadow:none !important;max-height:none !important;overflow:visible !important;width:100% !important;max-width:100% !important;padding:0 !important;}
   }
 </style>
 </head>
@@ -226,10 +230,13 @@
 </div>
 
 <div id="detailOverlay" class="no-print" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
-  <div style="background:#F7F5EC;border:2px solid var(--ink);padding:20px;max-width:640px;width:94%;max-height:80vh;overflow:auto;">
+  <div id="detailBox" style="background:#F7F5EC;border:2px solid var(--ink);padding:20px;max-width:640px;width:94%;max-height:80vh;overflow:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <h3 style="margin:0;font-family:'Courier New',monospace;font-size:14px;text-transform:uppercase;letter-spacing:1px;" id="detailTitle">Detalhamento</h3>
-      <button class="del" id="detailClose" style="font-size:13px;">fechar ✕</button>
+      <div class="no-print" style="display:flex;gap:8px;">
+        <button class="btn-print" id="detailPrintBtn" style="margin-left:0;">🖨️ Imprimir / PDF</button>
+        <button class="del" id="detailClose" style="font-size:13px;">fechar ✕</button>
+      </div>
     </div>
     <table>
       <thead>
@@ -632,6 +639,13 @@ document.getElementById('stampPagto').addEventListener('click', ()=>openDetail('
 document.getElementById('stampProximo').addEventListener('click', ()=>openDetail('proximo'));
 document.getElementById('detailClose').addEventListener('click', ()=>{
   document.getElementById('detailOverlay').style.display = 'none';
+});
+document.getElementById('detailPrintBtn').addEventListener('click', ()=>{
+  document.body.classList.add('printing-detail');
+  window.print();
+});
+window.addEventListener('afterprint', ()=>{
+  document.body.classList.remove('printing-detail');
 });
 
 /* ---------- EDITAR ---------- */
