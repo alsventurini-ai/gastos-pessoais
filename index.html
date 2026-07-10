@@ -81,6 +81,19 @@
   .catsub{font-family:'Courier New',monospace;font-size:11px;color:var(--ink-soft);margin-top:10px;}
   .datecell{font-family:'Courier New',monospace;font-size:12.5px;}
   .autor{font-family:'Courier New',monospace;font-size:10px;color:var(--ink-soft);}
+  .btn-print{background:var(--gold);color:#fff;border:none;padding:6px 14px;font-family:'Courier New',monospace;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;font-size:11px;margin-left:auto;}
+  .btn-print:hover{background:var(--ink);}
+
+  @media print{
+    body{background:#fff;}
+    .no-print{display:none !important;}
+    .wrap{max-width:100%;padding:0;}
+    header{border-bottom-color:#000;}
+    .stamp{border-color:#000;background:#fff;}
+    table{font-size:11px;}
+    th, td{border-color:#999;}
+    tr:hover td{background:none;}
+  }
 </style>
 </head>
 <body>
@@ -108,16 +121,17 @@
   </header>
 
   <div class="monthnav">
-    <button id="prevMonth">‹</button>
+    <button id="prevMonth" class="no-print">‹</button>
     <div class="mname" id="monthName">—</div>
-    <button id="nextMonth">›</button>
-    <div class="viewmode" id="viewmode">
+    <button id="nextMonth" class="no-print">›</button>
+    <div class="viewmode no-print" id="viewmode">
       <div data-mode="pagamento" class="active">Lista por data de pagamento</div>
       <div data-mode="compra">Lista por data da compra</div>
     </div>
+    <button class="btn-print no-print" id="btnPrint">🖨️ Imprimir / Salvar PDF</button>
   </div>
 
-  <div class="tabs" id="tabs">
+  <div class="tabs no-print" id="tabs">
     <div class="tab active" data-cat="all">Todos</div>
     <div class="tab" data-cat="1">1 · Carlos</div>
     <div class="tab" data-cat="2">2 · Lilian</div>
@@ -125,7 +139,7 @@
     <div class="tab" data-cat="4">4 · Outros</div>
   </div>
 
-  <div class="formbox">
+  <div class="formbox no-print">
     <h3>Novo gasto</h3>
     <div class="frow">
       <div class="fgroup">
@@ -203,7 +217,7 @@
     <thead>
       <tr>
         <th>Data compra</th><th>Data pagto</th><th>Categoria</th><th>Estabelecimento</th>
-        <th>Forma</th><th style="text-align:right;">Valor</th><th></th>
+        <th>Forma</th><th style="text-align:right;">Valor</th><th class="no-print"></th>
       </tr>
     </thead>
     <tbody id="rows"></tbody>
@@ -211,7 +225,7 @@
   <div class="catsub" id="footNote"></div>
 </div>
 
-<div id="detailOverlay" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
+<div id="detailOverlay" class="no-print" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
   <div style="background:#F7F5EC;border:2px solid var(--ink);padding:20px;max-width:640px;width:94%;max-height:80vh;overflow:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <h3 style="margin:0;font-family:'Courier New',monospace;font-size:14px;text-transform:uppercase;letter-spacing:1px;" id="detailTitle">Detalhamento</h3>
@@ -227,7 +241,7 @@
   </div>
 </div>
 
-<div id="editOverlay" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
+<div id="editOverlay" class="no-print" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
   <div style="background:#F7F5EC;border:2px solid var(--ink);padding:20px;max-width:460px;width:92%;">
     <h3 style="margin:0 0 14px;font-family:'Courier New',monospace;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Editar lançamento</h3>
     <div class="frow">
@@ -512,6 +526,7 @@ document.getElementById('viewmode').addEventListener('click',(e)=>{
   document.querySelectorAll('#viewmode div').forEach(x=>x.classList.remove('active'));
   t.classList.add('active'); render();
 });
+document.getElementById('btnPrint').addEventListener('click', ()=>{ window.print(); });
 
 function purchaseContribution(e){ return e.isInstallmentGroup ? (e.installmentNumber===1 ? e.totalAmount : 0) : e.amount; }
 
@@ -560,7 +575,7 @@ function render(){
         '<td>'+e.establishment+badge+'</td>'+
         '<td class="pay">'+formaTxt+'</td>'+
         '<td class="valor">'+fmtMoney(displayAmount)+'</td>'+
-        '<td>'+
+        '<td class="no-print">'+
           '<button class="del" onclick="openEdit(\''+e.id+'\')">editar</button>'+
           '<button class="del" onclick="deleteExpense(\''+e.id+'\',\''+e.groupId+'\',false)">excluir</button>'+
           ((e.installmentsTotal>1) ? '<button class="del" onclick="deleteExpense(\''+e.id+'\',\''+e.groupId+'\',true)">excluir esta+futuras</button>' : '')+
