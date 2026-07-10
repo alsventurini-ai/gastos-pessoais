@@ -30,6 +30,7 @@
   .stamp .lbl{font-family:'Courier New',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-soft);}
   .stamp .val{font-family:'Courier New',monospace;font-size:19px;font-weight:700;color:var(--ink);margin-top:3px;}
   .stamp.pagto .val{color:var(--gold);}
+  .stamp.proximo .val{color:var(--familia);}
 
   .monthnav{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-family:'Courier New',monospace;flex-wrap:wrap;}
   .monthnav button{background:var(--ink);color:var(--paper);border:none;width:30px;height:30px;cursor:pointer;font-size:16px;}
@@ -91,12 +92,16 @@
     </div>
     <div class="stats">
       <div class="stamp compra">
-        <div class="lbl">Total por data da compra</div>
+        <div class="lbl">Total do mês · por data da compra</div>
         <div class="val" id="purchaseTotal">R$ 0,00</div>
       </div>
       <div class="stamp pagto">
-        <div class="lbl">Total por data de pagamento</div>
+        <div class="lbl">Total do mês · por data de pagamento</div>
         <div class="val" id="paymentTotal">R$ 0,00</div>
+      </div>
+      <div class="stamp proximo">
+        <div class="lbl">Gastos para o mês seguinte</div>
+        <div class="val" id="nextMonthTotal">R$ 0,00</div>
       </div>
     </div>
   </header>
@@ -141,13 +146,15 @@
           <option value="Dinheiro">Dinheiro</option>
           <option value="Cartão de Crédito">Cartão de Crédito</option>
           <option value="Boleto">Boleto</option>
-          <option value="PIX/Transferência">PIX/Transferência</option>
+          <option value="PIX">PIX</option>
+          <option value="Transferência">Transferência</option>
+          <option value="Marcado">Marcado (fechamento mensal)</option>
         </select>
       </div>
     </div>
     <div class="frow">
       <div class="fgroup">
-        <label>Data da compra</label>
+        <label id="fPurchaseDateLabel">Data da compra</label>
         <input type="date" id="fPurchaseDate">
       </div>
       <div class="fgroup" id="fPayDateField">
@@ -161,6 +168,10 @@
       <div class="fgroup hide" id="fBoletoDueField">
         <label>Vencimento do 1º boleto</label>
         <input type="date" id="fBoletoDue">
+      </div>
+      <div class="fgroup hide" id="fPayDayField">
+        <label>Dia de fechamento (1-31)</label>
+        <input type="number" id="fPayDay" min="1" max="31" value="30">
       </div>
     </div>
     <div class="frow">
@@ -197,6 +208,64 @@
     <tbody id="rows"></tbody>
   </table>
   <div class="catsub" id="footNote"></div>
+</div>
+
+<div id="editOverlay" class="hide" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
+  <div style="background:#F7F5EC;border:2px solid var(--ink);padding:20px;max-width:460px;width:92%;">
+    <h3 style="margin:0 0 14px;font-family:'Courier New',monospace;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Editar lançamento</h3>
+    <div class="frow">
+      <div class="fgroup">
+        <label>Categoria</label>
+        <select id="eCat">
+          <option value="1">1 · Carlos</option>
+          <option value="2">2 · Lilian</option>
+          <option value="3">3 · Família / Casa</option>
+          <option value="4">4 · Outros</option>
+        </select>
+      </div>
+      <div class="fgroup grow">
+        <label>Estabelecimento</label>
+        <input type="text" id="eEst">
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fgroup">
+        <label>Forma de pagamento</label>
+        <select id="ePay">
+          <option value="Dinheiro">Dinheiro</option>
+          <option value="Cartão de Crédito">Cartão de Crédito</option>
+          <option value="Boleto">Boleto</option>
+          <option value="PIX">PIX</option>
+          <option value="Transferência">Transferência</option>
+          <option value="Marcado">Marcado (fechamento mensal)</option>
+        </select>
+      </div>
+      <div class="fgroup">
+        <label>Cartão (se houver)</label>
+        <input type="text" id="eCard">
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fgroup">
+        <label>Data da compra</label>
+        <input type="date" id="eDataCompra">
+      </div>
+      <div class="fgroup">
+        <label>Data de pagamento</label>
+        <input type="date" id="eDataPagto">
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fgroup">
+        <label>Valor (R$)</label>
+        <input type="number" id="eVal" step="0.01">
+      </div>
+    </div>
+    <div class="frow" style="justify-content:flex-end;gap:10px;">
+      <button class="btn-add" id="eCancel" style="background:var(--ink-soft);">Cancelar</button>
+      <button class="btn-add" id="eSave">Salvar alterações</button>
+    </div>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -239,6 +308,15 @@ function addMonthsToStr(dateStr, n){
   return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 }
 function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
+function daysInMonth(y,m){ return new Date(y, m, 0).getDate(); } // m = 1-12
+function computeMarcadoPaymentDate(purchaseDateStr, payDay){
+  const p = purchaseDateStr.split("-");
+  let y = parseInt(p[0]), m = parseInt(p[1]), d = parseInt(p[2]);
+  if(d > payDay){ m += 1; if(m>12){ m=1; y+=1; } }
+  const maxDay = daysInMonth(y,m);
+  const finalDay = Math.min(payDay, maxDay);
+  return y+"-"+pad(m)+"-"+pad(finalDay);
+}
 
 /* ---------- FIRESTORE SYNC ---------- */
 function startListening(){
@@ -261,19 +339,26 @@ const fCardField = document.getElementById('fCardField');
 const fBoletoDueField = document.getElementById('fBoletoDueField');
 const fParcelasField = document.getElementById('fParcelasField');
 const fPayDateField = document.getElementById('fPayDateField');
+const fPayDayField = document.getElementById('fPayDayField');
 const fRec = document.getElementById('fRec');
 const recOpts = document.getElementById('recOpts');
 const recMesesField = document.getElementById('recMesesField');
+const recBoxEl = document.querySelector('.recbox');
 
 function updateFormVisibility(){
   const method = fPay.value;
+  const isMarcado = method === 'Marcado';
   fCardField.classList.toggle('hide', method !== 'Cartão de Crédito');
   fBoletoDueField.classList.toggle('hide', method !== 'Boleto');
-  fPayDateField.classList.toggle('hide', method === 'Cartão de Crédito' || method === 'Boleto');
+  fPayDayField.classList.toggle('hide', !isMarcado);
+  fPayDateField.classList.toggle('hide', method === 'Cartão de Crédito' || method === 'Boleto' || isMarcado);
   const canParcelar = (method === 'Cartão de Crédito' || method === 'Boleto') && !fRec.checked;
   fParcelasField.classList.toggle('hide', !canParcelar);
   if(!canParcelar) document.getElementById('fParc').value = 1;
-  document.getElementById('fValLabel').textContent = fRec.checked ? 'Valor da parcela / mensalidade (R$)' : 'Valor total da compra (R$)';
+  recBoxEl.classList.toggle('hide', isMarcado);
+  if(isMarcado){ fRec.checked = false; recOpts.classList.add('hide'); }
+  document.getElementById('fValLabel').textContent = isMarcado ? 'Valor da marcação (R$)' : (fRec.checked ? 'Valor da parcela / mensalidade (R$)' : 'Valor total da compra (R$)');
+  document.getElementById('fPurchaseDateLabel').textContent = isMarcado ? 'Data da marcação' : 'Data da compra';
 }
 fPay.addEventListener('change', updateFormVisibility);
 fRec.addEventListener('change', ()=>{ recOpts.classList.toggle('hide', !fRec.checked); updateFormVisibility(); });
@@ -294,6 +379,7 @@ document.getElementById('btnAdd').addEventListener('click', async ()=>{
   const cardName = document.getElementById('fCard').value.trim();
   const boletoDue = document.getElementById('fBoletoDue').value;
   const manualPayDate = document.getElementById('fPayDate').value;
+  const payDay = parseInt(document.getElementById('fPayDay').value) || 30;
   const isRecurring = fRec.checked;
   const recType = document.querySelector('input[name=recType]:checked') ? document.querySelector('input[name=recType]:checked').value : 'indeterminado';
   const recMeses = parseInt(document.getElementById('fRecMeses').value) || 12;
@@ -305,6 +391,7 @@ document.getElementById('btnAdd').addEventListener('click', async ()=>{
   let firstPaymentDate;
   if(method === 'Cartão de Crédito') firstPaymentDate = purchaseDate;
   else if(method === 'Boleto') firstPaymentDate = boletoDue;
+  else if(method === 'Marcado') firstPaymentDate = computeMarcadoPaymentDate(purchaseDate, payDay);
   else firstPaymentDate = manualPayDate || purchaseDate;
 
   const groupId = genId();
@@ -395,6 +482,12 @@ function render(){
   const paymentTotal = paymentMonthEntries.reduce((s,e)=>s+e.amount,0);
   document.getElementById('paymentTotal').textContent = fmtMoney(paymentTotal);
 
+  const nextViewDate = new Date(viewDate); nextViewDate.setMonth(nextViewDate.getMonth()+1);
+  const nextKey = toKey(nextViewDate);
+  const nextMonthEntries = expenses.filter(e=>e.date.slice(0,7)===nextKey);
+  const nextMonthTotal = nextMonthEntries.reduce((s,e)=>s+e.amount,0);
+  document.getElementById('nextMonthTotal').textContent = fmtMoney(nextMonthTotal);
+
   let rows;
   if(viewMode === 'pagamento'){ rows = paymentMonthEntries.slice(); }
   else { rows = purchaseMonthEntries.filter(e => !e.isInstallmentGroup || e.installmentNumber===1); }
@@ -419,6 +512,7 @@ function render(){
         '<td class="pay">'+formaTxt+'</td>'+
         '<td class="valor">'+fmtMoney(displayAmount)+'</td>'+
         '<td>'+
+          '<button class="del" onclick="openEdit(\''+e.id+'\')">editar</button>'+
           '<button class="del" onclick="deleteExpense(\''+e.id+'\',\''+e.groupId+'\',false)">excluir</button>'+
           ((e.installmentsTotal>1) ? '<button class="del" onclick="deleteExpense(\''+e.id+'\',\''+e.groupId+'\',true)">excluir esta+futuras</button>' : '')+
         '</td>'+
@@ -440,6 +534,54 @@ const today = new Date().toISOString().slice(0,10);
 document.getElementById('fPurchaseDate').value = today;
 document.getElementById('fPayDate').value = today;
 document.getElementById('fBoletoDue').value = today;
+
+/* ---------- EDITAR ---------- */
+let editingId = null;
+function openEdit(id){
+  const e = expenses.find(x=>x.id===id);
+  if(!e) return;
+  editingId = id;
+  document.getElementById('eCat').value = e.category;
+  document.getElementById('eEst').value = e.establishment;
+  document.getElementById('ePay').value = e.paymentMethod;
+  document.getElementById('eCard').value = e.cardName || '';
+  document.getElementById('eDataCompra').value = e.purchaseDate;
+  document.getElementById('eDataPagto').value = e.date;
+  document.getElementById('eVal').value = e.amount;
+  document.getElementById('editOverlay').style.display = 'flex';
+}
+document.getElementById('eCancel').addEventListener('click', ()=>{
+  document.getElementById('editOverlay').style.display = 'none';
+  editingId = null;
+});
+document.getElementById('eSave').addEventListener('click', async ()=>{
+  if(!editingId) return;
+  const newVal = parseFloat(document.getElementById('eVal').value);
+  if(isNaN(newVal) || newVal<=0){ alert('Valor inválido.'); return; }
+  const e = expenses.find(x=>x.id===editingId);
+  const updates = {
+    category: document.getElementById('eCat').value,
+    establishment: document.getElementById('eEst').value.trim(),
+    paymentMethod: document.getElementById('ePay').value,
+    cardName: document.getElementById('eCard').value.trim(),
+    purchaseDate: document.getElementById('eDataCompra').value,
+    date: document.getElementById('eDataPagto').value,
+    amount: newVal
+  };
+  // se este lançamento representa o total de um grupo parcelado (1ª parcela na visão "compra"), manter totalAmount coerente
+  if(e && e.isInstallmentGroup && e.installmentNumber===1){
+    updates.totalAmount = newVal;
+  } else if(e && !e.isInstallmentGroup){
+    updates.totalAmount = newVal;
+  }
+  try{
+    await expensesRef.doc(editingId).update(updates);
+  }catch(err){
+    alert('Erro ao salvar: '+err.message);
+  }
+  document.getElementById('editOverlay').style.display = 'none';
+  editingId = null;
+});
 
 startListening();
 </script>
