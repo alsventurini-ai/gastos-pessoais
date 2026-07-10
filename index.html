@@ -272,10 +272,37 @@
         <input type="date" id="eDataPagto">
       </div>
     </div>
-    <div class="frow">
+    <div class="frow hide" id="eTipoSection">
       <div class="fgroup">
-        <label>Valor (R$)</label>
-        <input type="number" id="eVal" step="0.01">
+        <label>Tipo de gasto</label>
+        <div style="display:flex;gap:16px;margin-top:6px;">
+          <label class="radio" style="display:flex;align-items:center;gap:6px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;">
+            <input type="radio" name="eTipo" value="avista" checked> À vista
+          </label>
+          <label class="radio" style="display:flex;align-items:center;gap:6px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;">
+            <input type="radio" name="eTipo" value="parcelado"> Parcelado
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="frow" id="eAvistaField">
+      <div class="fgroup">
+        <label id="eValAvistaLabel">Valor (R$)</label>
+        <input type="number" id="eValAvista" step="0.01">
+      </div>
+    </div>
+    <div class="frow hide" id="eParceladoFields">
+      <div class="fgroup">
+        <label>Valor total da compra (R$)</label>
+        <input type="number" id="eValTotal" step="0.01">
+      </div>
+      <div class="fgroup">
+        <label>Número de parcelas</label>
+        <input type="number" id="eNumParc" min="1" max="48" value="2">
+      </div>
+      <div class="fgroup">
+        <label>Valor de cada parcela</label>
+        <input type="text" id="eValParcelaDisplay" disabled style="background:#eee;">
       </div>
     </div>
     <div class="frow" style="justify-content:flex-end;gap:10px;">
@@ -594,6 +621,24 @@ document.getElementById('detailClose').addEventListener('click', ()=>{
 
 /* ---------- EDITAR ---------- */
 let editingId = null;
+
+function updateEValParcelaDisplay(){
+  const total = parseFloat(document.getElementById('eValTotal').value);
+  const n = Math.max(1, parseInt(document.getElementById('eNumParc').value)||1);
+  const disp = document.getElementById('eValParcelaDisplay');
+  disp.value = (!isNaN(total) && total>0) ? fmtMoney(total/n) : '';
+}
+document.getElementById('eValTotal').addEventListener('input', updateEValParcelaDisplay);
+document.getElementById('eNumParc').addEventListener('input', updateEValParcelaDisplay);
+document.querySelectorAll('input[name=eTipo]').forEach(r=>{
+  r.addEventListener('change', ()=>{
+    const tipo = document.querySelector('input[name=eTipo]:checked').value;
+    document.getElementById('eAvistaField').classList.toggle('hide', tipo!=='avista');
+    document.getElementById('eParceladoFields').classList.toggle('hide', tipo!=='parcelado');
+    if(tipo==='parcelado') updateEValParcelaDisplay();
+  });
+});
+
 function openEdit(id){
   const e = expenses.find(x=>x.id===id);
   if(!e) return;
@@ -603,8 +648,38 @@ function openEdit(id){
   document.getElementById('ePay').value = e.paymentMethod;
   document.getElementById('eCard').value = e.cardName || '';
   document.getElementById('eDataCompra').value = e.purchaseDate;
-  document.getElementById('eDataPagto').value = e.date;
-  document.getElementById('eVal').value = e.amount;
+
+  const isGroupInstallment = !e.recurring && e.installmentsTotal > 1;
+  const eTipoSection = document.getElementById('eTipoSection');
+  const eAvistaField = document.getElementById('eAvistaField');
+  const eParceladoFields = document.getElementById('eParceladoFields');
+
+  if(e.recurring){
+    eTipoSection.classList.add('hide');
+    eAvistaField.classList.remove('hide');
+    eParceladoFields.classList.add('hide');
+    document.getElementById('eValAvistaLabel').textContent = 'Valor da parcela/mensalidade (R$)';
+    document.getElementById('eValAvista').value = e.amount;
+    document.getElementById('eDataPagto').value = e.date;
+  } else if(isGroupInstallment){
+    const first = expenses.find(x=>x.groupId===e.groupId && x.installmentNumber===1) || e;
+    eTipoSection.classList.remove('hide');
+    document.querySelector('input[name=eTipo][value=parcelado]').checked = true;
+    eAvistaField.classList.add('hide');
+    eParceladoFields.classList.remove('hide');
+    document.getElementById('eValTotal').value = e.totalAmount;
+    document.getElementById('eNumParc').value = e.installmentsTotal;
+    document.getElementById('eDataPagto').value = first.date;
+    updateEValParcelaDisplay();
+  } else {
+    eTipoSection.classList.remove('hide');
+    document.querySelector('input[name=eTipo][value=avista]').checked = true;
+    eAvistaField.classList.remove('hide');
+    eParceladoFields.classList.add('hide');
+    document.getElementById('eValAvistaLabel').textContent = 'Valor (R$)';
+    document.getElementById('eValAvista').value = e.amount;
+    document.getElementById('eDataPagto').value = e.date;
+  }
   document.getElementById('editOverlay').style.display = 'flex';
 }
 document.getElementById('eCancel').addEventListener('click', ()=>{
@@ -613,26 +688,64 @@ document.getElementById('eCancel').addEventListener('click', ()=>{
 });
 document.getElementById('eSave').addEventListener('click', async ()=>{
   if(!editingId) return;
-  const newVal = parseFloat(document.getElementById('eVal').value);
-  if(isNaN(newVal) || newVal<=0){ alert('Valor inválido.'); return; }
   const e = expenses.find(x=>x.id===editingId);
-  const updates = {
-    category: document.getElementById('eCat').value,
-    establishment: document.getElementById('eEst').value.trim(),
-    paymentMethod: document.getElementById('ePay').value,
-    cardName: document.getElementById('eCard').value.trim(),
-    purchaseDate: document.getElementById('eDataCompra').value,
-    date: document.getElementById('eDataPagto').value,
-    amount: newVal
-  };
-  // se este lançamento representa o total de um grupo parcelado (1ª parcela na visão "compra"), manter totalAmount coerente
-  if(e && e.isInstallmentGroup && e.installmentNumber===1){
-    updates.totalAmount = newVal;
-  } else if(e && !e.isInstallmentGroup){
-    updates.totalAmount = newVal;
-  }
+  if(!e) return;
+
+  const category = document.getElementById('eCat').value;
+  const establishment = document.getElementById('eEst').value.trim();
+  const paymentMethod = document.getElementById('ePay').value;
+  const cardName = document.getElementById('eCard').value.trim();
+  const purchaseDate = document.getElementById('eDataCompra').value;
+  const paymentDate = document.getElementById('eDataPagto').value;
+
+  if(!establishment || !purchaseDate || !paymentDate){ alert('Preencha estabelecimento e as duas datas.'); return; }
+
   try{
-    await expensesRef.doc(editingId).update(updates);
+    if(e.recurring){
+      const newVal = parseFloat(document.getElementById('eValAvista').value);
+      if(isNaN(newVal) || newVal<=0){ alert('Valor inválido.'); return; }
+      await expensesRef.doc(editingId).update({
+        category, establishment, paymentMethod, cardName,
+        purchaseDate, date: paymentDate, amount: newVal, totalAmount: newVal
+      });
+    } else {
+      const tipo = document.querySelector('input[name=eTipo]:checked').value;
+      const groupId = e.groupId;
+      const siblings = expenses.filter(x=>x.groupId===groupId);
+      const batch = db.batch();
+      siblings.forEach(x=> batch.delete(expensesRef.doc(x.id)));
+
+      if(tipo === 'avista'){
+        const newVal = parseFloat(document.getElementById('eValAvista').value);
+        if(isNaN(newVal) || newVal<=0){ alert('Valor inválido.'); return; }
+        const docRef = expensesRef.doc();
+        batch.set(docRef, {
+          groupId, category, establishment, paymentMethod, cardName,
+          purchaseDate, date: paymentDate, amount: newVal, totalAmount: newVal,
+          installmentNumber: 1, installmentsTotal: 1, isInstallmentGroup: false,
+          recurring: false, recurringType: null, createdAt: Date.now()
+        });
+      } else {
+        const valTotal = parseFloat(document.getElementById('eValTotal').value);
+        const numParc = Math.max(1, parseInt(document.getElementById('eNumParc').value)||1);
+        if(isNaN(valTotal) || valTotal<=0){ alert('Valor total inválido.'); return; }
+        let allocated = 0;
+        for(let i=0;i<numParc;i++){
+          const dDate = addMonthsToStr(paymentDate, i);
+          let amount;
+          const rawPart = Math.round((valTotal/numParc)*100)/100;
+          if(i===numParc-1){ amount = Math.round((valTotal-allocated)*100)/100; } else { amount = rawPart; allocated += rawPart; }
+          const docRef = expensesRef.doc();
+          batch.set(docRef, {
+            groupId, category, establishment, paymentMethod, cardName,
+            purchaseDate: purchaseDate, date: dDate, amount, totalAmount: valTotal,
+            installmentNumber: i+1, installmentsTotal: numParc, isInstallmentGroup: numParc>1,
+            recurring: false, recurringType: null, createdAt: Date.now()
+          });
+        }
+      }
+      await batch.commit();
+    }
   }catch(err){
     alert('Erro ao salvar: '+err.message);
   }
