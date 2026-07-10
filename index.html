@@ -221,7 +221,7 @@
     <thead>
       <tr>
         <th>Data compra</th><th>Data pagto</th><th>Categoria</th><th>Estabelecimento</th>
-        <th>Forma</th><th style="text-align:right;">Valor</th><th class="no-print"></th>
+        <th>Forma</th><th style="text-align:right;">Valor da Compra</th><th style="text-align:right;">Valor da Parcela</th><th class="no-print"></th>
       </tr>
     </thead>
     <tbody id="rows"></tbody>
@@ -567,13 +567,14 @@ function render(){
 
   const tbody = document.getElementById('rows');
   if(rows.length===0){
-    tbody.innerHTML = '<tr><td colspan="7" class="empty">Nenhum gasto neste mês'+(activeCat!=='all'?' para esta categoria':'')+'.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Nenhum gasto neste mês'+(activeCat!=='all'?' para esta categoria':'')+'.</td></tr>';
   } else {
     tbody.innerHTML = rows.map(e=>{
       let badge = '';
       if(e.recurring){ badge = '<span class="badge rec">Recorrente'+(e.recurringType==='determinado' ? ' '+e.installmentNumber+'/'+e.installmentsTotal : '')+'</span>'; }
       else if(e.installmentsTotal>1){ badge = '<span class="badge">'+e.installmentNumber+'/'+e.installmentsTotal+'</span>'; }
-      const displayAmount = (viewMode==='compra' && e.isInstallmentGroup) ? e.totalAmount : e.amount;
+      const valorCompra = e.totalAmount;
+      const valorParcela = e.amount;
       const formaTxt = e.paymentMethod + (e.cardName ? ' · '+e.cardName : '');
       return '<tr>'+
         '<td class="datecell">'+fmtDateShort(e.purchaseDate)+'</td>'+
@@ -581,7 +582,8 @@ function render(){
         '<td><span class="cat-dot cat-'+e.category+'"></span>'+CAT_NAMES[e.category]+'</td>'+
         '<td>'+e.establishment+badge+'</td>'+
         '<td class="pay">'+formaTxt+'</td>'+
-        '<td class="valor">'+fmtMoney(displayAmount)+'</td>'+
+        '<td class="valor">'+fmtMoney(valorCompra)+'</td>'+
+        '<td class="valor">'+fmtMoney(valorParcela)+'</td>'+
         '<td class="no-print">'+
           '<button class="del" onclick="openEdit(\''+e.id+'\')">editar</button>'+
           '<button class="del" onclick="deleteExpense(\''+e.id+'\',\''+e.groupId+'\',false)">excluir</button>'+
