@@ -231,6 +231,7 @@
       </div>
     </div>
     <button class="btn-add" id="btnAdd">Lançar gasto</button>
+    <button class="btn-add" id="btnClear" style="background:var(--ink-soft);">Limpar lançamento</button>
   </div>
 
   <table>
@@ -650,6 +651,31 @@ document.querySelectorAll('input[name=recType]').forEach(r=>{
   });
 });
 updateFormVisibility();
+
+function resetNewExpenseForm(){
+  document.getElementById('fCat').value = '1';
+  document.getElementById('fEst').value = '';
+  fPay.value = 'Dinheiro';
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('fPurchaseDate').value = today;
+  document.getElementById('fPayDate').value = today;
+  document.getElementById('fBoletoDue').value = today;
+  document.getElementById('fPayDay').value = 30;
+  document.getElementById('fVal').value = '';
+  document.getElementById('fParc').value = 1;
+  document.getElementById('fCard').value = '';
+  document.getElementById('fCardNew').value = '';
+  document.getElementById('fCardNew').classList.add('hide');
+  document.getElementById('fCardClosing').value = '';
+  document.getElementById('fCardDue').value = '';
+  fRec.checked = false;
+  recOpts.classList.add('hide');
+  document.querySelector('input[name=recType][value=indeterminado]').checked = true;
+  document.getElementById('fRecMeses').value = 12;
+  recMesesField.classList.add('hide');
+  updateFormVisibility();
+}
+document.getElementById('btnClear').addEventListener('click', resetNewExpenseForm);
 
 document.getElementById('btnAdd').addEventListener('click', async ()=>{
   const btn = document.getElementById('btnAdd');
