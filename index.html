@@ -135,6 +135,9 @@
     </div>
     <button class="btn-print no-print" id="btnPrint">Imprimir / Salvar PDF</button>
     <button class="btn-print no-print" id="btnCards" style="background:var(--carlos);">Gerenciar Cartões</button>
+    <button class="btn-print no-print" id="btnBackup" style="background:var(--familia);">Backup Geral</button>
+    <button class="btn-print no-print" id="btnRestore" style="background:var(--lilian);">Restaurar Backup</button>
+    <input type="file" id="restoreFileInput" accept=".json" class="hide">
   </div>
 
   <div class="tabs no-print" id="tabs">
@@ -234,6 +237,9 @@
     <button class="btn-add" id="btnClear" style="background:var(--ink-soft);">Limpar lançamento</button>
   </div>
 
+  <div class="no-print" style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+    <button class="btn-print" id="btnPrintList" style="margin-left:0;">Imprimir esta lista</button>
+  </div>
   <table>
     <thead>
       <tr>
@@ -794,6 +800,65 @@ document.getElementById('viewmode').addEventListener('click',(e)=>{
   t.classList.add('active'); render();
 });
 document.getElementById('btnPrint').addEventListener('click', ()=>{ window.print(); });
+document.getElementById('btnPrintList').addEventListener('click', ()=>{ window.print(); });
+
+/* ---------- BACKUP GERAL ---------- */
+document.getElementById('btnBackup').addEventListener('click', async ()=>{
+  try{
+    const expSnap = await expensesRef.get();
+    const cardSnap = await cardSettingsRef.get();
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      expenses: expSnap.docs.map(d=>({id:d.id, data:d.data()})),
+      cardSettings: cardSnap.docs.map(d=>({id:d.id, data:d.data()}))
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const today = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = 'backup-gastos-'+today+'.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }catch(err){
+    alert('Erro ao gerar backup: '+err.message);
+  }
+});
+
+document.getElementById('btnRestore').addEventListener('click', ()=>{
+  document.getElementById('restoreFileInput').click();
+});
+document.getElementById('restoreFileInput').addEventListener('change', async (ev)=>{
+  const file = ev.target.files[0];
+  if(!file) return;
+  if(!confirm('Restaurar este backup vai adicionar/sobrescrever os lançamentos e cartões contidos no arquivo. Continuar?')) {
+    ev.target.value = '';
+    return;
+  }
+  try{
+    const text = await file.text();
+    const backup = JSON.parse(text);
+    // grava em lotes de ate 450 (limite do Firestore por lote e 500)
+    const expItems = backup.expenses||[];
+    for(let i=0;i<expItems.length;i+=450){
+      const batch = db.batch();
+      expItems.slice(i,i+450).forEach(item=> batch.set(expensesRef.doc(item.id), item.data));
+      await batch.commit();
+    }
+    const cardItems = backup.cardSettings||[];
+    for(let i=0;i<cardItems.length;i+=450){
+      const batch = db.batch();
+      cardItems.slice(i,i+450).forEach(item=> batch.set(cardSettingsRef.doc(item.id), item.data));
+      await batch.commit();
+    }
+    alert('Backup restaurado com sucesso! ('+expItems.length+' gastos, '+cardItems.length+' cartões)');
+  }catch(err){
+    alert('Erro ao restaurar backup: '+err.message);
+  }
+  ev.target.value = '';
+});
 
 function purchaseContribution(e){ return e.isInstallmentGroup ? (e.installmentNumber===1 ? e.totalAmount : 0) : e.amount; }
 
