@@ -34,7 +34,7 @@
   .stamp.proximo .val{color:var(--familia);}
 
   .monthnav{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-family:'Courier New',monospace;flex-wrap:wrap;}
-  .monthnav button{background:var(--ink);color:var(--paper);border:none;width:30px;height:30px;cursor:pointer;font-size:16px;}
+  .monthnav .navbtn{background:var(--ink);color:var(--paper);border:none;width:30px;height:30px;cursor:pointer;font-size:16px;}
   .monthnav .mname{font-size:16px;font-weight:700;text-transform:capitalize;min-width:170px;text-align:center;}
   .viewmode{display:flex;font-family:'Courier New',monospace;font-size:11px;margin-left:auto;border:1.5px solid var(--ink);}
   .viewmode div{padding:6px 12px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;}
@@ -126,9 +126,9 @@
   </header>
 
   <div class="monthnav">
-    <button id="prevMonth" class="no-print">‹</button>
+    <button id="prevMonth" class="no-print navbtn">‹</button>
     <div class="mname" id="monthName">—</div>
-    <button id="nextMonth" class="no-print">›</button>
+    <button id="nextMonth" class="no-print navbtn">›</button>
     <div class="viewmode no-print" id="viewmode">
       <div data-mode="pagamento" class="active">Ver por Pagamento</div>
       <div data-mode="compra">Ver por Compra</div>
