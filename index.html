@@ -133,8 +133,8 @@
       <div data-mode="pagamento" class="active">Ver por Pagamento</div>
       <div data-mode="compra">Ver por Compra</div>
     </div>
-    <button class="btn-print no-print" id="btnPrint">🖨️ Imprimir / Salvar PDF</button>
-    <button class="btn-print no-print" id="btnCards" style="background:var(--carlos);">💳 Gerenciar cartões</button>
+    <button class="btn-print no-print" id="btnPrint">Imprimir / Salvar PDF</button>
+    <button class="btn-print no-print" id="btnCards" style="background:var(--carlos);">Gerenciar Cartões</button>
   </div>
 
   <div class="tabs no-print" id="tabs">
@@ -188,7 +188,7 @@
         <label>Cartão utilizado</label>
         <select id="fCard">
           <option value="">Selecione um cartão...</option>
-          <option value="__new__">➕ Novo cartão...</option>
+          <option value="__new__">+ Novo cartão...</option>
         </select>
         <input type="text" id="fCardNew" class="hide" placeholder="Nome do novo cartão" style="margin-top:6px;">
       </div>
@@ -290,7 +290,7 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <h3 style="margin:0;font-family:'Courier New',monospace;font-size:14px;text-transform:uppercase;letter-spacing:1px;" id="detailTitle">Detalhamento</h3>
       <div class="no-print" style="display:flex;gap:8px;">
-        <button class="btn-print" id="detailPrintBtn" style="margin-left:0;">🖨️ Imprimir / PDF</button>
+        <button class="btn-print" id="detailPrintBtn" style="margin-left:0;">Imprimir / PDF</button>
         <button class="del" id="detailClose" style="font-size:13px;">fechar ✕</button>
       </div>
     </div>
@@ -339,7 +339,7 @@
         <label>Cartão (se houver)</label>
         <select id="eCard">
           <option value="">Selecione um cartão...</option>
-          <option value="__new__">➕ Novo cartão...</option>
+          <option value="__new__">+ Novo cartão...</option>
         </select>
         <input type="text" id="eCardNew" class="hide" placeholder="Nome do novo cartão" style="margin-top:6px;">
       </div>
@@ -354,7 +354,7 @@
         <input type="number" id="eCardDue" min="1" max="31">
       </div>
       <div class="fgroup" style="justify-content:flex-end;">
-        <button class="del" id="eRecalcDate" style="margin-bottom:8px;">🔄 recalcular data de pagamento</button>
+        <button class="del" id="eRecalcDate" style="margin-bottom:8px;">Recalcular data de pagamento</button>
       </div>
     </div>
     <div class="frow">
@@ -479,7 +479,7 @@ function populateCardSelects(){
   ['fCard','eCard'].forEach(id=>{
     const sel = document.getElementById(id);
     const prevValue = sel.value;
-    sel.innerHTML = '<option value="">Selecione um cartão...</option><option value="__new__">➕ Novo cartão...</option>';
+    sel.innerHTML = '<option value="">Selecione um cartão...</option><option value="__new__">+ Novo cartão...</option>';
     Object.values(cardSettingsCache).sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{
       const opt = document.createElement('option');
       opt.value = c.name;
