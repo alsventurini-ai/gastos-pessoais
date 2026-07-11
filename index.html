@@ -111,15 +111,15 @@
     </div>
     <div class="stats">
       <div class="stamp compra" id="stampCompra" data-detail="compra">
-        <div class="lbl">Total do mês · por data da compra</div>
+        <div class="lbl">Total das Compras do Mês</div>
         <div class="val" id="purchaseTotal">R$ 0,00</div>
       </div>
       <div class="stamp pagto" id="stampPagto" data-detail="pagamento">
-        <div class="lbl">Total do mês · por data de pagamento</div>
+        <div class="lbl">Total a Pagar no Mês</div>
         <div class="val" id="paymentTotal">R$ 0,00</div>
       </div>
       <div class="stamp proximo" id="stampProximo" data-detail="proximo">
-        <div class="lbl">Gastos para o mês seguinte</div>
+        <div class="lbl">A Pagar no Mês Seguinte</div>
         <div class="val" id="nextMonthTotal">R$ 0,00</div>
       </div>
     </div>
@@ -130,10 +130,11 @@
     <div class="mname" id="monthName">—</div>
     <button id="nextMonth" class="no-print">›</button>
     <div class="viewmode no-print" id="viewmode">
-      <div data-mode="pagamento" class="active">Lista por data de pagamento</div>
-      <div data-mode="compra">Lista por data da compra</div>
+      <div data-mode="pagamento" class="active">Ver por Pagamento</div>
+      <div data-mode="compra">Ver por Compra</div>
     </div>
     <button class="btn-print no-print" id="btnPrint">🖨️ Imprimir / Salvar PDF</button>
+    <button class="btn-print no-print" id="btnCards" style="background:var(--carlos);">💳 Gerenciar cartões</button>
   </div>
 
   <div class="tabs no-print" id="tabs">
@@ -185,7 +186,19 @@
       </div>
       <div class="fgroup hide" id="fCardField">
         <label>Cartão utilizado</label>
-        <input type="text" id="fCard" placeholder="Ex: Nubank">
+        <select id="fCard">
+          <option value="">Selecione um cartão...</option>
+          <option value="__new__">➕ Novo cartão...</option>
+        </select>
+        <input type="text" id="fCardNew" class="hide" placeholder="Nome do novo cartão" style="margin-top:6px;">
+      </div>
+      <div class="fgroup hide" id="fCardClosingField">
+        <label>Dia de fechamento</label>
+        <input type="number" id="fCardClosing" min="1" max="31" placeholder="Ex: 25">
+      </div>
+      <div class="fgroup hide" id="fCardDueField">
+        <label>Dia de vencimento</label>
+        <input type="number" id="fCardDue" min="1" max="31" placeholder="Ex: 5">
       </div>
       <div class="fgroup hide" id="fBoletoDueField">
         <label>Vencimento do 1º boleto</label>
@@ -230,6 +243,46 @@
     <tbody id="rows"></tbody>
   </table>
   <div class="catsub" id="footNote"></div>
+</div>
+
+<div id="cardsOverlay" class="no-print" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
+  <div style="background:#F7F5EC;border:2px solid var(--ink);padding:20px;max-width:560px;width:94%;max-height:82vh;overflow:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="margin:0;font-family:'Courier New',monospace;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Cartões cadastrados</h3>
+      <button class="del" id="cardsClose" style="font-size:13px;">fechar ✕</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Nome</th><th>Fechamento</th><th>Vencimento</th><th></th></tr>
+      </thead>
+      <tbody id="cardsRows"></tbody>
+    </table>
+    <div class="recbox" style="margin-top:16px;">
+      <h3 style="font-family:'Courier New',monospace;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 10px;" id="cardFormTitle">Adicionar cartão</h3>
+      <div class="frow">
+        <div class="fgroup grow">
+          <label>Nome do cartão</label>
+          <input type="text" id="ccName" placeholder="Ex: Nubank">
+        </div>
+        <div class="fgroup">
+          <label>Dia de fechamento</label>
+          <input type="number" id="ccClosing" min="1" max="31">
+        </div>
+        <div class="fgroup">
+          <label>Dia de vencimento</label>
+          <input type="number" id="ccDue" min="1" max="31">
+        </div>
+      </div>
+      <div class="frow" style="justify-content:flex-end;gap:10px;">
+        <button class="btn-add" id="ccCancelEdit" style="background:var(--ink-soft);display:none;">Cancelar edição</button>
+        <button class="btn-add" id="ccSave">Salvar cartão</button>
+      </div>
+      <div class="catsub" style="margin-top:6px;">
+        Atenção: alterar o fechamento/vencimento aqui vale só para lançamentos novos —
+        os gastos já lançados mantêm as datas com que foram criados.
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="detailOverlay" class="no-print" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
@@ -284,7 +337,24 @@
       </div>
       <div class="fgroup">
         <label>Cartão (se houver)</label>
-        <input type="text" id="eCard">
+        <select id="eCard">
+          <option value="">Selecione um cartão...</option>
+          <option value="__new__">➕ Novo cartão...</option>
+        </select>
+        <input type="text" id="eCardNew" class="hide" placeholder="Nome do novo cartão" style="margin-top:6px;">
+      </div>
+    </div>
+    <div class="frow hide" id="eCardDaysFields">
+      <div class="fgroup">
+        <label>Dia de fechamento</label>
+        <input type="number" id="eCardClosing" min="1" max="31">
+      </div>
+      <div class="fgroup">
+        <label>Dia de vencimento</label>
+        <input type="number" id="eCardDue" min="1" max="31">
+      </div>
+      <div class="fgroup" style="justify-content:flex-end;">
+        <button class="del" id="eRecalcDate" style="margin-bottom:8px;">🔄 recalcular data de pagamento</button>
       </div>
     </div>
     <div class="frow">
@@ -293,7 +363,7 @@
         <input type="date" id="eDataCompra">
       </div>
       <div class="fgroup">
-        <label>Data de pagamento</label>
+        <label>Data de pagamento (1ª parcela)</label>
         <input type="date" id="eDataPagto">
       </div>
     </div>
@@ -354,6 +424,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const expensesRef = db.collection('expenses');
+const cardSettingsRef = db.collection('cardSettings');
+let cardSettingsCache = {};
 
 const CAT_NAMES = {1:"Carlos",2:"Lilian",3:"Família/Casa",4:"Outros",5:"PJ"};
 let expenses = [];
@@ -387,8 +459,142 @@ function computeMarcadoPaymentDate(purchaseDateStr, payDay){
   const finalDay = Math.min(payDay, maxDay);
   return y+"-"+pad(m)+"-"+pad(finalDay);
 }
+function computeCardPaymentDate(purchaseDateStr, closingDay, dueDay){
+  const p = purchaseDateStr.split("-");
+  let y = parseInt(p[0]), m = parseInt(p[1]), d = parseInt(p[2]);
+  // determina o mes de fechamento da fatura
+  let closeY = y, closeM = m;
+  if(d > closingDay){ closeM += 1; if(closeM>12){ closeM=1; closeY+=1; } }
+  // determina o mes de vencimento: se o dia de vencimento vem antes (ou igual) do dia de fechamento,
+  // o vencimento cai no mes seguinte ao fechamento (padrao mais comum: fecha dia 25, vence dia 05)
+  let dueY = closeY, dueM = closeM;
+  if(dueDay <= closingDay){ dueM += 1; if(dueM>12){ dueM=1; dueY+=1; } }
+  const maxDay = daysInMonth(dueY, dueM);
+  const finalDay = Math.min(dueDay, maxDay);
+  return dueY+"-"+pad(dueM)+"-"+pad(finalDay);
+}
 
 /* ---------- FIRESTORE SYNC ---------- */
+function populateCardSelects(){
+  ['fCard','eCard'].forEach(id=>{
+    const sel = document.getElementById(id);
+    const prevValue = sel.value;
+    sel.innerHTML = '<option value="">Selecione um cartão...</option><option value="__new__">➕ Novo cartão...</option>';
+    Object.values(cardSettingsCache).sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+    if(Array.from(sel.options).some(o=>o.value===prevValue)) sel.value = prevValue;
+  });
+}
+function startListeningCards(){
+  cardSettingsRef.onSnapshot(snap=>{
+    cardSettingsCache = {};
+    snap.forEach(doc=>{
+      cardSettingsCache[doc.id] = doc.data();
+    });
+    populateCardSelects();
+    if(document.getElementById('cardsOverlay').style.display === 'flex'){
+      renderCardsList();
+    }
+  });
+}
+function sanitizeCardKey(name){ return name.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-'); }
+document.getElementById('fCard').addEventListener('change', ()=>{
+  const sel = document.getElementById('fCard');
+  const isNew = sel.value === '__new__';
+  document.getElementById('fCardNew').classList.toggle('hide', !isNew);
+  if(isNew){
+    document.getElementById('fCardNew').value = '';
+    document.getElementById('fCardClosing').value = '';
+    document.getElementById('fCardDue').value = '';
+    return;
+  }
+  const found = cardSettingsCache[sanitizeCardKey(sel.value)];
+  if(found){
+    document.getElementById('fCardClosing').value = found.closingDay;
+    document.getElementById('fCardDue').value = found.dueDay;
+  }
+});
+
+/* ---------- GERENCIAR CARTÕES ---------- */
+let editingCardKey = null;
+function renderCardsList(){
+  const tbody = document.getElementById('cardsRows');
+  const keys = Object.keys(cardSettingsCache);
+  if(keys.length===0){
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">Nenhum cartão cadastrado ainda.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = keys.map(k=>{
+    const c = cardSettingsCache[k];
+    return '<tr>'+
+      '<td>'+c.name+'</td>'+
+      '<td class="datecell">dia '+c.closingDay+'</td>'+
+      '<td class="datecell">dia '+c.dueDay+'</td>'+
+      '<td>'+
+        '<button class="del" onclick="editCard(\''+k+'\')">editar</button>'+
+        '<button class="del" onclick="deleteCard(\''+k+'\')">excluir</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+function openCardsManager(){
+  renderCardsList();
+  document.getElementById('cardsOverlay').style.display = 'flex';
+}
+function editCard(key){
+  const c = cardSettingsCache[key];
+  if(!c) return;
+  editingCardKey = key;
+  document.getElementById('ccName').value = c.name;
+  document.getElementById('ccClosing').value = c.closingDay;
+  document.getElementById('ccDue').value = c.dueDay;
+  document.getElementById('cardFormTitle').textContent = 'Editar cartão';
+  document.getElementById('ccCancelEdit').style.display = 'inline-block';
+}
+async function deleteCard(key){
+  if(!confirm('Excluir este cartão da lista? (Os gastos já lançados com ele não são afetados.)')) return;
+  await cardSettingsRef.doc(key).delete();
+}
+document.getElementById('btnCards').addEventListener('click', openCardsManager);
+document.getElementById('cardsClose').addEventListener('click', ()=>{
+  document.getElementById('cardsOverlay').style.display = 'none';
+});
+document.getElementById('ccCancelEdit').addEventListener('click', ()=>{
+  editingCardKey = null;
+  document.getElementById('ccName').value = '';
+  document.getElementById('ccClosing').value = '';
+  document.getElementById('ccDue').value = '';
+  document.getElementById('cardFormTitle').textContent = 'Adicionar cartão';
+  document.getElementById('ccCancelEdit').style.display = 'none';
+});
+document.getElementById('ccSave').addEventListener('click', async ()=>{
+  const name = document.getElementById('ccName').value.trim();
+  const closingDay = parseInt(document.getElementById('ccClosing').value);
+  const dueDay = parseInt(document.getElementById('ccDue').value);
+  if(!name || isNaN(closingDay) || isNaN(dueDay) || closingDay<1 || closingDay>31 || dueDay<1 || dueDay>31){
+    alert('Preencha nome, dia de fechamento e dia de vencimento válidos (1-31).');
+    return;
+  }
+  const newKey = sanitizeCardKey(name);
+  try{
+    if(editingCardKey && editingCardKey !== newKey){
+      await cardSettingsRef.doc(editingCardKey).delete();
+    }
+    await cardSettingsRef.doc(newKey).set({name, closingDay, dueDay}, {merge:true});
+  }catch(err){
+    alert('Erro ao salvar cartão: '+err.message);
+  }
+  editingCardKey = null;
+  document.getElementById('ccName').value = '';
+  document.getElementById('ccClosing').value = '';
+  document.getElementById('ccDue').value = '';
+  document.getElementById('cardFormTitle').textContent = 'Adicionar cartão';
+  document.getElementById('ccCancelEdit').style.display = 'none';
+});
 function startListening(){
   unsubscribe = expensesRef.onSnapshot(snap=>{
     expenses = [];
@@ -415,14 +621,20 @@ const recOpts = document.getElementById('recOpts');
 const recMesesField = document.getElementById('recMesesField');
 const recBoxEl = document.querySelector('.recbox');
 
+const fCardClosingField = document.getElementById('fCardClosingField');
+const fCardDueField = document.getElementById('fCardDueField');
+
 function updateFormVisibility(){
   const method = fPay.value;
   const isMarcado = method === 'Marcado';
-  fCardField.classList.toggle('hide', method !== 'Cartão de Crédito');
+  const isCartao = method === 'Cartão de Crédito';
+  fCardField.classList.toggle('hide', !isCartao);
+  fCardClosingField.classList.toggle('hide', !isCartao);
+  fCardDueField.classList.toggle('hide', !isCartao);
   fBoletoDueField.classList.toggle('hide', method !== 'Boleto');
   fPayDayField.classList.toggle('hide', !isMarcado);
-  fPayDateField.classList.toggle('hide', method === 'Cartão de Crédito' || method === 'Boleto' || isMarcado);
-  const canParcelar = (method === 'Cartão de Crédito' || method === 'Boleto') && !fRec.checked;
+  fPayDateField.classList.toggle('hide', isCartao || method === 'Boleto' || isMarcado);
+  const canParcelar = (isCartao || method === 'Boleto') && !fRec.checked;
   fParcelasField.classList.toggle('hide', !canParcelar);
   if(!canParcelar) document.getElementById('fParc').value = 1;
   recBoxEl.classList.toggle('hide', isMarcado);
@@ -446,7 +658,8 @@ document.getElementById('btnAdd').addEventListener('click', async ()=>{
   const method = fPay.value;
   const purchaseDate = document.getElementById('fPurchaseDate').value;
   const val = parseFloat(document.getElementById('fVal').value);
-  const cardName = document.getElementById('fCard').value.trim();
+  const fCardSel = document.getElementById('fCard');
+  const cardName = fCardSel.value === '__new__' ? document.getElementById('fCardNew').value.trim() : fCardSel.value;
   const boletoDue = document.getElementById('fBoletoDue').value;
   const manualPayDate = document.getElementById('fPayDate').value;
   const payDay = parseInt(document.getElementById('fPayDay').value) || 30;
@@ -459,7 +672,15 @@ document.getElementById('btnAdd').addEventListener('click', async ()=>{
   if(method === 'Boleto' && !boletoDue){ alert('Informe o vencimento do 1º boleto.'); return; }
 
   let firstPaymentDate;
-  if(method === 'Cartão de Crédito') firstPaymentDate = purchaseDate;
+  if(method === 'Cartão de Crédito'){
+    const closingDay = parseInt(document.getElementById('fCardClosing').value);
+    const dueDay = parseInt(document.getElementById('fCardDue').value);
+    if(!isNaN(closingDay) && !isNaN(dueDay) && closingDay>=1 && closingDay<=31 && dueDay>=1 && dueDay<=31){
+      firstPaymentDate = computeCardPaymentDate(purchaseDate, closingDay, dueDay);
+    } else {
+      firstPaymentDate = purchaseDate;
+    }
+  }
   else if(method === 'Boleto') firstPaymentDate = boletoDue;
   else if(method === 'Marcado') firstPaymentDate = computeMarcadoPaymentDate(purchaseDate, payDay);
   else firstPaymentDate = manualPayDate || purchaseDate;
@@ -495,6 +716,13 @@ document.getElementById('btnAdd').addEventListener('click', async ()=>{
       });
     }
     await batch.commit();
+    if(method === 'Cartão de Crédito' && cardName){
+      const closingDay = parseInt(document.getElementById('fCardClosing').value);
+      const dueDay = parseInt(document.getElementById('fCardDue').value);
+      if(!isNaN(closingDay) && !isNaN(dueDay)){
+        await cardSettingsRef.doc(sanitizeCardKey(cardName)).set({name:cardName, closingDay, dueDay}, {merge:true});
+      }
+    }
   }catch(e){
     alert('Erro ao salvar: ' + e.message);
   }
@@ -504,6 +732,8 @@ document.getElementById('btnAdd').addEventListener('click', async ()=>{
   document.getElementById('fVal').value='';
   document.getElementById('fParc').value=1;
   document.getElementById('fCard').value='';
+  document.getElementById('fCardNew').value='';
+  document.getElementById('fCardNew').classList.add('hide');
   fRec.checked = false;
   recOpts.classList.add('hide');
   updateFormVisibility();
@@ -615,9 +845,9 @@ document.getElementById('fBoletoDue').value = today;
 
 /* ---------- DETALHAMENTO DOS TOTAIS ---------- */
 const DETAIL_TITLES = {
-  compra: 'Detalhamento · Total do mês por data da compra',
-  pagamento: 'Detalhamento · Total do mês por data de pagamento',
-  proximo: 'Detalhamento · Gastos para o mês seguinte'
+  compra: 'Detalhamento · Total das Compras do Mês',
+  pagamento: 'Detalhamento · Total a Pagar no Mês',
+  proximo: 'Detalhamento · A Pagar no Mês Seguinte'
 };
 function openDetail(type){
   const list = currentDetailLists[type].slice().sort((a,b)=>a.date.localeCompare(b.date));
@@ -658,6 +888,33 @@ window.addEventListener('afterprint', ()=>{
 /* ---------- EDITAR ---------- */
 let editingId = null;
 
+document.getElementById('ePay').addEventListener('change', ()=>{
+  document.getElementById('eCardDaysFields').classList.toggle('hide', document.getElementById('ePay').value !== 'Cartão de Crédito');
+});
+document.getElementById('eCard').addEventListener('change', ()=>{
+  const sel = document.getElementById('eCard');
+  const isNew = sel.value === '__new__';
+  document.getElementById('eCardNew').classList.toggle('hide', !isNew);
+  if(isNew){
+    document.getElementById('eCardNew').value = '';
+    document.getElementById('eCardClosing').value = '';
+    document.getElementById('eCardDue').value = '';
+    return;
+  }
+  const found = cardSettingsCache[sanitizeCardKey(sel.value)];
+  if(found){
+    document.getElementById('eCardClosing').value = found.closingDay;
+    document.getElementById('eCardDue').value = found.dueDay;
+  }
+});
+document.getElementById('eRecalcDate').addEventListener('click', ()=>{
+  const purchaseDate = document.getElementById('eDataCompra').value;
+  const closingDay = parseInt(document.getElementById('eCardClosing').value);
+  const dueDay = parseInt(document.getElementById('eCardDue').value);
+  if(!purchaseDate || isNaN(closingDay) || isNaN(dueDay)){ alert('Preencha data da compra, dia de fechamento e dia de vencimento.'); return; }
+  document.getElementById('eDataPagto').value = computeCardPaymentDate(purchaseDate, closingDay, dueDay);
+});
+
 function updateEValParcelaDisplay(){
   const total = parseFloat(document.getElementById('eValTotal').value);
   const n = Math.max(1, parseInt(document.getElementById('eNumParc').value)||1);
@@ -682,7 +939,30 @@ function openEdit(id){
   document.getElementById('eCat').value = e.category;
   document.getElementById('eEst').value = e.establishment;
   document.getElementById('ePay').value = e.paymentMethod;
-  document.getElementById('eCard').value = e.cardName || '';
+  const eCardSel = document.getElementById('eCard');
+  const eCardNewInput = document.getElementById('eCardNew');
+  if(e.cardName && Array.from(eCardSel.options).some(o=>o.value===e.cardName)){
+    eCardSel.value = e.cardName;
+    eCardNewInput.classList.add('hide');
+    eCardNewInput.value = '';
+  } else if(e.cardName){
+    eCardSel.value = '__new__';
+    eCardNewInput.value = e.cardName;
+    eCardNewInput.classList.remove('hide');
+  } else {
+    eCardSel.value = '';
+    eCardNewInput.classList.add('hide');
+    eCardNewInput.value = '';
+  }
+  document.getElementById('eCardDaysFields').classList.toggle('hide', e.paymentMethod !== 'Cartão de Crédito');
+  if(e.cardName){
+    const found = cardSettingsCache[sanitizeCardKey(e.cardName)];
+    document.getElementById('eCardClosing').value = found ? found.closingDay : '';
+    document.getElementById('eCardDue').value = found ? found.dueDay : '';
+  } else {
+    document.getElementById('eCardClosing').value = '';
+    document.getElementById('eCardDue').value = '';
+  }
   document.getElementById('eDataCompra').value = e.purchaseDate;
 
   const isGroupInstallment = !e.recurring && e.installmentsTotal > 1;
@@ -730,11 +1010,20 @@ document.getElementById('eSave').addEventListener('click', async ()=>{
   const category = document.getElementById('eCat').value;
   const establishment = document.getElementById('eEst').value.trim();
   const paymentMethod = document.getElementById('ePay').value;
-  const cardName = document.getElementById('eCard').value.trim();
+  const eCardSelSave = document.getElementById('eCard');
+  const cardName = eCardSelSave.value === '__new__' ? document.getElementById('eCardNew').value.trim() : eCardSelSave.value;
   const purchaseDate = document.getElementById('eDataCompra').value;
   const paymentDate = document.getElementById('eDataPagto').value;
 
   if(!establishment || !purchaseDate || !paymentDate){ alert('Preencha estabelecimento e as duas datas.'); return; }
+
+  if(paymentMethod === 'Cartão de Crédito' && cardName){
+    const closingDay = parseInt(document.getElementById('eCardClosing').value);
+    const dueDay = parseInt(document.getElementById('eCardDue').value);
+    if(!isNaN(closingDay) && !isNaN(dueDay)){
+      await cardSettingsRef.doc(sanitizeCardKey(cardName)).set({name:cardName, closingDay, dueDay}, {merge:true});
+    }
+  }
 
   try{
     if(e.recurring){
@@ -790,6 +1079,7 @@ document.getElementById('eSave').addEventListener('click', async ()=>{
 });
 
 startListening();
+startListeningCards();
 </script>
 </body>
 </html>
