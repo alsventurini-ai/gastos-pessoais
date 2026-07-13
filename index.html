@@ -43,11 +43,7 @@
   .tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
   .tab{padding:7px 14px;border:1.5px solid var(--ink);cursor:pointer;font-family:'Courier New',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.5px;background:transparent;color:var(--ink);}
   .tab.active{background:var(--ink);color:var(--paper);}
-  .tab[data-cat="1"].active{background:var(--carlos);border-color:var(--carlos);}
-  .tab[data-cat="2"].active{background:var(--lilian);border-color:var(--lilian);}
-  .tab[data-cat="3"].active{background:var(--familia);border-color:var(--familia);}
-  .tab[data-cat="4"].active{background:var(--outros);border-color:var(--outros);}
-  .tab[data-cat="5"].active{background:var(--pj);border-color:var(--pj);}
+  .tab.active{color:#fff;}
 
   .formbox{background:#F7F5EC;border:1.5px solid var(--ink);padding:16px;margin-bottom:22px;}
   .formbox h3{margin:0 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:1px;font-family:'Courier New',monospace;}
@@ -71,8 +67,7 @@
   td{padding:9px 6px;border-bottom:1px solid var(--paper-line);font-size:13.5px;vertical-align:middle;}
   tr:hover td{background:#F0EEE1;}
   .cat-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;}
-  .cat-1{background:var(--carlos);} .cat-2{background:var(--lilian);}
-  .cat-3{background:var(--familia);} .cat-4{background:var(--outros);} .cat-5{background:var(--pj);}
+
   .badge{font-family:'Courier New',monospace;font-size:10px;background:var(--gold);color:#fff;padding:2px 6px;margin-left:6px;white-space:nowrap;}
   .badge.rec{background:var(--familia);}
   .valor{font-family:'Courier New',monospace;font-weight:700;text-align:right;white-space:nowrap;}
@@ -135,6 +130,11 @@
     </div>
     <button class="btn-print no-print" id="btnPrint">Imprimir / Salvar PDF</button>
     <button class="btn-print no-print" id="btnCards" style="background:var(--carlos);">Gerenciar Cartões</button>
+    <button class="btn-print no-print" id="btnCategories" style="background:var(--outros);">Gerenciar Categorias</button>
+    <button class="btn-print no-print" id="btnBankAccounts" style="background:var(--lilian);">Gerenciar Contas</button>
+    <button class="btn-print no-print" id="btnBestCard" style="background:var(--gold);">Qual Cartão Usar?</button>
+    <button class="btn-print no-print" id="btnCorriqueiros" style="background:var(--familia);">Recorrentes</button>
+    <button class="btn-print no-print" id="btnNotify" style="background:#6B3FA0;">Ativar Notificações</button>
     <button class="btn-print no-print" id="btnBackup" style="background:var(--familia);">Backup Geral</button>
     <button class="btn-print no-print" id="btnRestore" style="background:var(--lilian);">Restaurar Backup</button>
     <input type="file" id="restoreFileInput" accept=".json" class="hide">
@@ -142,11 +142,6 @@
 
   <div class="tabs no-print" id="tabs">
     <div class="tab active" data-cat="all">Todos</div>
-    <div class="tab" data-cat="1">1 · Carlos</div>
-    <div class="tab" data-cat="2">2 · Lilian</div>
-    <div class="tab" data-cat="3">3 · Família / Casa</div>
-    <div class="tab" data-cat="4">4 · Outros</div>
-    <div class="tab" data-cat="5">5 · PJ</div>
   </div>
 
   <div class="formbox no-print">
@@ -155,11 +150,7 @@
       <div class="fgroup">
         <label>Categoria</label>
         <select id="fCat">
-          <option value="1">1 · Carlos</option>
-          <option value="2">2 · Lilian</option>
-          <option value="3">3 · Família / Casa</option>
-          <option value="4">4 · Outros</option>
-          <option value="5">5 · PJ</option>
+
         </select>
       </div>
       <div class="fgroup grow">
@@ -211,6 +202,14 @@
         <label>Dia de fechamento (1-31)</label>
         <input type="number" id="fPayDay" min="1" max="31" value="30">
       </div>
+      <div class="fgroup hide" id="fBankField">
+        <label>Conta de onde saiu</label>
+        <select id="fBank">
+          <option value="">Selecione a conta...</option>
+          <option value="__new__">+ Nova conta...</option>
+        </select>
+        <input type="text" id="fBankNew" class="hide" placeholder="Nome do banco" style="margin-top:6px;">
+      </div>
     </div>
     <div class="frow">
       <div class="fgroup">
@@ -250,6 +249,187 @@
     <tbody id="rows"></tbody>
   </table>
   <div class="catsub" id="footNote"></div>
+</div>
+
+<div id="bankAccountsOverlay" class="no-print" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
+  <div style="background:#F7F5EC;border:2px solid var(--ink);padding:20px;max-width:480px;width:94%;max-height:82vh;overflow:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="margin:0;font-family:'Courier New',monospace;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Contas cadastradas</h3>
+      <button class="del" id="bankAccountsClose" style="font-size:13px;">fechar ✕</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Nome</th><th></th></tr>
+      </thead>
+      <tbody id="bankAccountsRows"></tbody>
+    </table>
+    <div class="recbox" style="margin-top:16px;">
+      <h3 style="font-family:'Courier New',monospace;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 10px;" id="bankFormTitle">Adicionar conta</h3>
+      <div class="frow">
+        <div class="fgroup grow">
+          <label>Nome do banco/conta</label>
+          <input type="text" id="bkName" placeholder="Ex: Banco Inter">
+        </div>
+      </div>
+      <div class="frow" style="justify-content:flex-end;gap:10px;">
+        <button class="btn-add" id="bkCancelEdit" style="background:var(--ink-soft);display:none;">Cancelar edição</button>
+        <button class="btn-add" id="bkSave">Salvar conta</button>
+      </div>
+      <div class="catsub" style="margin-top:6px;">
+        Usada pra registrar de onde saiu o dinheiro em pagamentos por PIX, Boleto, Transferência ou Marcado
+        (para Cartão de Crédito, use "Gerenciar Cartões"). Sincroniza entre aparelhos, igual cartões e categorias.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="categoriesOverlay" class="no-print" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
+  <div style="background:#F7F5EC;border:2px solid var(--ink);padding:20px;max-width:520px;width:94%;max-height:82vh;overflow:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="margin:0;font-family:'Courier New',monospace;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Categorias cadastradas</h3>
+      <button class="del" id="categoriesClose" style="font-size:13px;">fechar ✕</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Cor</th><th>Nome</th><th></th></tr>
+      </thead>
+      <tbody id="categoriesRows"></tbody>
+    </table>
+    <div class="recbox" style="margin-top:16px;">
+      <h3 style="font-family:'Courier New',monospace;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 10px;" id="catFormTitle">Adicionar categoria</h3>
+      <div class="frow">
+        <div class="fgroup grow">
+          <label>Nome da categoria</label>
+          <input type="text" id="ctName" placeholder="Ex: Viagens">
+        </div>
+        <div class="fgroup" style="max-width:90px;">
+          <label>Cor</label>
+          <input type="color" id="ctColor" value="#2B5D8C" style="height:38px;padding:2px;">
+        </div>
+      </div>
+      <div class="frow" style="justify-content:flex-end;gap:10px;">
+        <button class="btn-add" id="ctCancelEdit" style="background:var(--ink-soft);display:none;">Cancelar edição</button>
+        <button class="btn-add" id="ctSave">Salvar categoria</button>
+      </div>
+      <div class="catsub" style="margin-top:6px;">
+        Excluir uma categoria não apaga os gastos já lançados com ela — eles continuam
+        existindo, só ficam sem nome/cor até você recategorizá-los (editando cada um).
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="bestCardOverlay" class="no-print" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
+  <div style="background:#F7F5EC;border:2px solid var(--ink);padding:20px;max-width:560px;width:94%;max-height:82vh;overflow:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="margin:0;font-family:'Courier New',monospace;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Qual cartão usar?</h3>
+      <button class="del" id="bestCardClose" style="font-size:13px;">fechar ✕</button>
+    </div>
+    <div class="frow">
+      <div class="fgroup">
+        <label>Data da compra</label>
+        <input type="date" id="bcDate">
+      </div>
+      <div class="fgroup">
+        <label>Ver só este cartão (opcional)</label>
+        <select id="bcCardFilter">
+          <option value="">Todos os cartões (ranking)</option>
+        </select>
+      </div>
+    </div>
+    <div class="catsub" style="margin-bottom:12px;">
+      Deixe em "Todos os cartões" pra ver o ranking de qual te dá mais prazo. Ou escolha um cartão
+      específico pra ver só a data em que a compra cairia nele.
+    </div>
+    <table>
+      <thead>
+        <tr><th>Cartão</th><th>Cai na fatura de</th><th style="text-align:right;">Prazo</th></tr>
+      </thead>
+      <tbody id="bcRows"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="corriqueirosOverlay" class="no-print" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
+  <div id="corBox" style="background:#F7F5EC;border:2px solid var(--ink);padding:20px;max-width:720px;width:96%;max-height:86vh;overflow:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="margin:0;font-family:'Courier New',monospace;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Recorrentes · <span id="corMonthLabel"></span></h3>
+      <div class="no-print" style="display:flex;gap:8px;">
+        <button class="btn-print" id="corPrintBtn" style="margin-left:0;">Imprimir / PDF</button>
+        <button class="del" id="corriqueirosClose" style="font-size:13px;">fechar ✕</button>
+      </div>
+    </div>
+    <div class="monthnav" style="margin-bottom:12px;">
+      <button id="corPrevMonth" class="navbtn">‹</button>
+      <div class="mname" id="corMonthName" style="font-size:14px;">—</div>
+      <button id="corNextMonth" class="navbtn">›</button>
+      <div class="viewmode" id="corViewMode" style="margin-left:auto;">
+        <div data-mode="month" class="active">Por Mês</div>
+        <div data-mode="grouped">Agrupado</div>
+      </div>
+    </div>
+    <div id="corGroupedBackRow" class="hide" style="margin-bottom:10px;">
+      <button class="del" id="corGroupedBack">‹ voltar pra lista de itens</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Categoria</th><th>Estabelecimento</th><th style="text-align:right;">Valor</th>
+          <th>Data Prevista</th><th>Forma de Pagamento</th><th>Data Real do Pagamento</th><th>Situação</th>
+        </tr>
+      </thead>
+      <tbody id="corRows"></tbody>
+    </table>
+    <div class="catsub" style="margin-top:12px;">
+      Só aparecem aqui os gastos marcados como "recorrente" no momento em que foram lançados.
+      Preencha a "Data Real do Pagamento" quando efetivamente pagar cada parcela — fica salvo automaticamente.
+    </div>
+
+    <div class="recbox no-print" style="margin-top:18px;">
+      <h3 style="font-family:'Courier New',monospace;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 10px;">Adicionar novo recorrente</h3>
+      <div class="frow">
+        <div class="fgroup">
+          <label>Categoria</label>
+          <select id="rcCat"></select>
+        </div>
+        <div class="fgroup grow">
+          <label>Estabelecimento</label>
+          <input type="text" id="rcEst" placeholder="Ex: Aluguel, Escola, Mensalidade academia...">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fgroup">
+          <label>Valor da parcela/mensalidade (R$)</label>
+          <input type="number" id="rcVal" step="0.01">
+        </div>
+        <div class="fgroup">
+          <label>Data de início (1ª cobrança)</label>
+          <input type="date" id="rcInicio">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fgroup">
+          <label>Duração</label>
+          <div style="display:flex;gap:16px;margin-top:6px;">
+            <label class="radio" style="display:flex;align-items:center;gap:6px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;">
+              <input type="radio" name="rcType" value="indeterminado" checked> Por tempo indeterminado
+            </label>
+            <label class="radio" style="display:flex;align-items:center;gap:6px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;">
+              <input type="radio" name="rcType" value="determinado"> Por tempo determinado
+            </label>
+          </div>
+        </div>
+        <div class="fgroup hide" id="rcMesesField">
+          <label>Número de parcelas</label>
+          <input type="number" id="rcMeses" min="1" max="60" value="12">
+        </div>
+      </div>
+      <button class="btn-add" id="rcSave">Adicionar Recorrente</button>
+      <div class="catsub" style="margin-top:6px;">
+        Já nasce como pendente — você escolhe a forma de pagamento (e o cartão, se for o caso) na hora de confirmar cada mês.
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="cardsOverlay" class="no-print" style="position:fixed;inset:0;background:rgba(32,48,74,.55);z-index:50;align-items:center;justify-content:center;display:none;">
@@ -318,11 +498,7 @@
       <div class="fgroup">
         <label>Categoria</label>
         <select id="eCat">
-          <option value="1">1 · Carlos</option>
-          <option value="2">2 · Lilian</option>
-          <option value="3">3 · Família / Casa</option>
-          <option value="4">4 · Outros</option>
-          <option value="5">5 · PJ</option>
+
         </select>
       </div>
       <div class="fgroup grow">
@@ -362,6 +538,16 @@
       </div>
       <div class="fgroup" style="justify-content:flex-end;">
         <button class="del" id="eRecalcDate" style="margin-bottom:8px;">Recalcular data de pagamento</button>
+      </div>
+    </div>
+    <div class="frow hide" id="eBankField">
+      <div class="fgroup">
+        <label>Conta de onde saiu</label>
+        <select id="eBank">
+          <option value="">Selecione a conta...</option>
+          <option value="__new__">+ Nova conta...</option>
+        </select>
+        <input type="text" id="eBankNew" class="hide" placeholder="Nome do banco" style="margin-top:6px;">
       </div>
     </div>
     <div class="frow">
@@ -428,19 +614,50 @@ const firebaseConfig = {
 };
 /* ==================================================================== */
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const expensesRef = db.collection('expenses');
-const cardSettingsRef = db.collection('cardSettings');
+let db = null, expensesRef = null, cardSettingsRef = null, categoriesRef = null, bankAccountsRef = null, firebaseReady = false;
+try{
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  expensesRef = db.collection('expenses');
+  cardSettingsRef = db.collection('cardSettings');
+  categoriesRef = db.collection('categories');
+  bankAccountsRef = db.collection('bankAccounts');
+  firebaseReady = true;
+}catch(fbErr){
+  console.error('Firebase indisponível neste ambiente (isso é normal em prévias sem internet liberada):', fbErr);
+}
 let cardSettingsCache = {};
+let bankAccountsCache = {};
+function sanitizeBankKeyStatic(name){ return name.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-'); }
+function DEFAULT_BANK_ACCOUNTS_FALLBACK(){
+  return ["Banco do Brasil","Itaú","Itaú Mãe","Nubank","Santander","Caixa","Mercado Pago"];
+}
+DEFAULT_BANK_ACCOUNTS_FALLBACK().forEach(b=>{ bankAccountsCache[sanitizeBankKeyStatic(b)] = {name:b}; });
 
-const CAT_NAMES = {1:"Carlos",2:"Lilian",3:"Família/Casa",4:"Outros",5:"PJ"};
+function DEFAULT_CATEGORIES_FALLBACK(){
+  return [
+    {id:'1', name:'Carlos', color:'#2B5D8C', order:0},
+    {id:'2', name:'Lilian', color:'#8C2B4A', order:1},
+    {id:'3', name:'Família/Casa', color:'#2B7A52', order:2},
+    {id:'4', name:'Outros', color:'#8C6B2B', order:3},
+    {id:'5', name:'PJ', color:'#6B3FA0', order:4}
+  ];
+}
+function getCatName(id){ return categoriesCache[id] ? categoriesCache[id].name : 'Categoria'; }
+function getCatColor(id){ return categoriesCache[id] ? categoriesCache[id].color : '#999999'; }
+function sortedCategoryEntries(){
+  return Object.entries(categoriesCache).sort((a,b)=>(a[1].order||0)-(b[1].order||0));
+}
+let categoriesCache = {};
+DEFAULT_CATEGORIES_FALLBACK().forEach(c=>{ categoriesCache[c.id] = {name:c.name, color:c.color, order:c.order}; });
 let expenses = [];
 let activeCat = "all";
 let viewMode = "compra";
 let viewDate = new Date(); viewDate.setDate(1);
 let unsubscribe = null;
 let currentDetailLists = { compra: [], pagamento: [], proximo: [] };
+renderCategoryTabs();
+populateCategorySelects();
 
 function pad(n){return n.toString().padStart(2,"0");}
 function toKey(d){return d.getFullYear()+"-"+pad(d.getMonth()+1);}
@@ -496,6 +713,141 @@ function populateCardSelects(){
     if(Array.from(sel.options).some(o=>o.value===prevValue)) sel.value = prevValue;
   });
 }
+document.getElementById('fBank').addEventListener('change', ()=>{
+  const sel = document.getElementById('fBank');
+  const isNew = sel.value === '__new__';
+  document.getElementById('fBankNew').classList.toggle('hide', !isNew);
+  if(isNew){ document.getElementById('fBankNew').value = ''; }
+});
+
+/* ---------- CATEGORIAS ---------- */
+const DEFAULT_CATEGORIES = [
+  {id:'1', name:'Carlos', color:'#2B5D8C', order:0},
+  {id:'2', name:'Lilian', color:'#8C2B4A', order:1},
+  {id:'3', name:'Família/Casa', color:'#2B7A52', order:2},
+  {id:'4', name:'Outros', color:'#8C6B2B', order:3},
+  {id:'5', name:'PJ', color:'#6B3FA0', order:4}
+];
+let categoriesSeeded = false;
+async function seedDefaultCategoriesIfEmpty(){
+  const snap = await categoriesRef.get();
+  if(snap.empty && !categoriesSeeded){
+    categoriesSeeded = true;
+    const batch = db.batch();
+    DEFAULT_CATEGORIES.forEach(c=> batch.set(categoriesRef.doc(c.id), {name:c.name, color:c.color, order:c.order}));
+    await batch.commit();
+  }
+}
+function renderCategoryTabs(){
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.querySelectorAll('.tab[data-cat]:not([data-cat="all"])').forEach(t=>t.remove());
+  const allTab = tabsEl.querySelector('.tab[data-cat="all"]');
+  let activeStillExists = (activeCat === 'all');
+  sortedCategoryEntries().forEach(([id, c])=>{
+    const t = document.createElement('div');
+    t.className = 'tab';
+    t.dataset.cat = id;
+    t.dataset.color = c.color;
+    t.textContent = c.name;
+    if(id === activeCat){
+      t.classList.add('active');
+      t.style.background = c.color;
+      t.style.borderColor = c.color;
+      activeStillExists = true;
+    }
+    tabsEl.appendChild(t);
+  });
+  if(!activeStillExists){
+    activeCat = 'all';
+    allTab.classList.add('active');
+  } else if(activeCat === 'all'){
+    allTab.classList.add('active');
+  } else {
+    allTab.classList.remove('active');
+  }
+}
+function populateCategorySelects(){
+  ['fCat','eCat','rcCat'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const prevValue = sel.value;
+    sel.innerHTML = '';
+    sortedCategoryEntries().forEach(([cid, c])=>{
+      const opt = document.createElement('option');
+      opt.value = cid;
+      opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+    if(Array.from(sel.options).some(o=>o.value===prevValue)) sel.value = prevValue;
+  });
+}
+function startListeningCategories(){
+  categoriesRef.onSnapshot(async snap=>{
+    if(snap.empty){
+      await seedDefaultCategoriesIfEmpty();
+      return;
+    }
+    categoriesCache = {};
+    snap.forEach(doc=>{ categoriesCache[doc.id] = doc.data(); });
+    renderCategoryTabs();
+    populateCategorySelects();
+    if(document.getElementById('categoriesOverlay').style.display === 'flex'){
+      renderCategoriesList();
+    }
+    render();
+  });
+}
+function sanitizeCatKey(name){ return 'cat_'+name.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-')+'_'+Date.now().toString(36); }
+
+/* ---------- CONTAS BANCÁRIAS (via Firestore, sincroniza entre aparelhos) ---------- */
+let bankAccountsSeeded = false;
+async function seedDefaultBankAccountsIfEmpty(){
+  const snap = await bankAccountsRef.get();
+  if(snap.empty && !bankAccountsSeeded){
+    bankAccountsSeeded = true;
+    const batch = db.batch();
+    DEFAULT_BANK_ACCOUNTS_FALLBACK().forEach(name=> batch.set(bankAccountsRef.doc(sanitizeBankKeyStatic(name)), {name}));
+    await batch.commit();
+  }
+}
+function populateBankSelects(){
+  ['fBank','eBank'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const prevValue = sel.value;
+    sel.innerHTML = '<option value="">Selecione a conta...</option><option value="__new__">+ Nova conta...</option>';
+    Object.values(bankAccountsCache).sort((a,b)=>a.name.localeCompare(b.name)).forEach(b=>{
+      const opt = document.createElement('option');
+      opt.value = b.name;
+      opt.textContent = b.name;
+      sel.appendChild(opt);
+    });
+    if(Array.from(sel.options).some(o=>o.value===prevValue)) sel.value = prevValue;
+  });
+}
+function startListeningBankAccounts(){
+  bankAccountsRef.onSnapshot(async snap=>{
+    if(snap.empty){
+      await seedDefaultBankAccountsIfEmpty();
+      return;
+    }
+    bankAccountsCache = {};
+    snap.forEach(doc=>{ bankAccountsCache[doc.id] = doc.data(); });
+    populateBankSelects();
+    if(document.getElementById('bankAccountsOverlay') && document.getElementById('bankAccountsOverlay').style.display === 'flex'){
+      renderBankAccountsList();
+    }
+    if(document.getElementById('corriqueirosOverlay').style.display === 'flex'){
+      renderCorriqueiros();
+    }
+  });
+}
+async function upsertBankAccount(name){
+  if(!name) return;
+  await bankAccountsRef.doc(sanitizeBankKey(name)).set({name}, {merge:true});
+}
+function sanitizeBankKey(name){ return name.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-'); }
+
 function startListeningCards(){
   cardSettingsRef.onSnapshot(snap=>{
     cardSettingsCache = {};
@@ -505,6 +857,9 @@ function startListeningCards(){
     populateCardSelects();
     if(document.getElementById('cardsOverlay').style.display === 'flex'){
       renderCardsList();
+    }
+    if(document.getElementById('corriqueirosOverlay').style.display === 'flex'){
+      renderCorriqueiros();
     }
   });
 }
@@ -524,6 +879,144 @@ document.getElementById('fCard').addEventListener('change', ()=>{
     document.getElementById('fCardClosing').value = found.closingDay;
     document.getElementById('fCardDue').value = found.dueDay;
   }
+});
+document.getElementById('fBank').addEventListener('change', ()=>{
+  const sel = document.getElementById('fBank');
+  const isNew = sel.value === '__new__';
+  document.getElementById('fBankNew').classList.toggle('hide', !isNew);
+  if(isNew){ document.getElementById('fBankNew').value = ''; }
+});
+
+/* ---------- GERENCIAR CONTAS BANCÁRIAS ---------- */
+let editingBankKey = null;
+function renderBankAccountsList(){
+  const tbody = document.getElementById('bankAccountsRows');
+  const entries = Object.entries(bankAccountsCache).sort((a,b)=>a[1].name.localeCompare(b[1].name));
+  if(entries.length===0){
+    tbody.innerHTML = '<tr><td colspan="2" class="empty">Nenhuma conta cadastrada ainda.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = entries.map(([key,b])=>{
+    return '<tr>'+
+      '<td>'+b.name+'</td>'+
+      '<td>'+
+        '<button class="del" onclick="editBankAccount(\''+key+'\')">editar</button>'+
+        '<button class="del" onclick="deleteBankAccount(\''+key+'\')">excluir</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+function openBankAccountsManager(){
+  renderBankAccountsList();
+  document.getElementById('bankAccountsOverlay').style.display = 'flex';
+}
+function editBankAccount(key){
+  const b = bankAccountsCache[key];
+  if(!b) return;
+  editingBankKey = key;
+  document.getElementById('bkName').value = b.name;
+  document.getElementById('bankFormTitle').textContent = 'Editar conta';
+  document.getElementById('bkCancelEdit').style.display = 'inline-block';
+}
+async function deleteBankAccount(key){
+  if(!confirm('Excluir esta conta? Os gastos já lançados com ela continuam existindo, só ficam sem essa referência.')) return;
+  await bankAccountsRef.doc(key).delete();
+}
+document.getElementById('btnBankAccounts').addEventListener('click', openBankAccountsManager);
+document.getElementById('bankAccountsClose').addEventListener('click', ()=>{
+  document.getElementById('bankAccountsOverlay').style.display = 'none';
+});
+document.getElementById('bkCancelEdit').addEventListener('click', ()=>{
+  editingBankKey = null;
+  document.getElementById('bkName').value = '';
+  document.getElementById('bankFormTitle').textContent = 'Adicionar conta';
+  document.getElementById('bkCancelEdit').style.display = 'none';
+});
+document.getElementById('bkSave').addEventListener('click', async ()=>{
+  const name = document.getElementById('bkName').value.trim();
+  if(!name){ alert('Digite o nome da conta.'); return; }
+  const newKey = sanitizeBankKey(name);
+  try{
+    if(editingBankKey && editingBankKey !== newKey){
+      await bankAccountsRef.doc(editingBankKey).delete();
+    }
+    await bankAccountsRef.doc(newKey).set({name}, {merge:true});
+  }catch(err){
+    alert('Erro ao salvar conta: '+err.message);
+  }
+  editingBankKey = null;
+  document.getElementById('bkName').value = '';
+  document.getElementById('bankFormTitle').textContent = 'Adicionar conta';
+  document.getElementById('bkCancelEdit').style.display = 'none';
+});
+
+/* ---------- GERENCIAR CATEGORIAS ---------- */
+let editingCatKey = null;
+function renderCategoriesList(){
+  const tbody = document.getElementById('categoriesRows');
+  const entries = sortedCategoryEntries();
+  if(entries.length===0){
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">Nenhuma categoria cadastrada ainda.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = entries.map(([id,c])=>{
+    return '<tr>'+
+      '<td><span class="cat-dot" style="background:'+c.color+';"></span></td>'+
+      '<td>'+c.name+'</td>'+
+      '<td>'+
+        '<button class="del" onclick="editCategory(\''+id+'\')">editar</button>'+
+        '<button class="del" onclick="deleteCategory(\''+id+'\')">excluir</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+function openCategoriesManager(){
+  renderCategoriesList();
+  document.getElementById('categoriesOverlay').style.display = 'flex';
+}
+function editCategory(id){
+  const c = categoriesCache[id];
+  if(!c) return;
+  editingCatKey = id;
+  document.getElementById('ctName').value = c.name;
+  document.getElementById('ctColor').value = c.color;
+  document.getElementById('catFormTitle').textContent = 'Editar categoria';
+  document.getElementById('ctCancelEdit').style.display = 'inline-block';
+}
+async function deleteCategory(id){
+  if(!confirm('Excluir esta categoria? Os gastos já lançados com ela continuam existindo, mas ficam sem nome/cor até você recategorizá-los.')) return;
+  await categoriesRef.doc(id).delete();
+}
+document.getElementById('btnCategories').addEventListener('click', openCategoriesManager);
+document.getElementById('categoriesClose').addEventListener('click', ()=>{
+  document.getElementById('categoriesOverlay').style.display = 'none';
+});
+document.getElementById('ctCancelEdit').addEventListener('click', ()=>{
+  editingCatKey = null;
+  document.getElementById('ctName').value = '';
+  document.getElementById('ctColor').value = '#2B5D8C';
+  document.getElementById('catFormTitle').textContent = 'Adicionar categoria';
+  document.getElementById('ctCancelEdit').style.display = 'none';
+});
+document.getElementById('ctSave').addEventListener('click', async ()=>{
+  const name = document.getElementById('ctName').value.trim();
+  const color = document.getElementById('ctColor').value;
+  if(!name){ alert('Digite um nome para a categoria.'); return; }
+  try{
+    if(editingCatKey){
+      await categoriesRef.doc(editingCatKey).update({name, color});
+    } else {
+      const maxOrder = Object.values(categoriesCache).reduce((m,c)=>Math.max(m, c.order||0), -1);
+      await categoriesRef.doc(sanitizeCatKey(name)).set({name, color, order: maxOrder+1});
+    }
+  }catch(err){
+    alert('Erro ao salvar categoria: '+err.message);
+  }
+  editingCatKey = null;
+  document.getElementById('ctName').value = '';
+  document.getElementById('ctColor').value = '#2B5D8C';
+  document.getElementById('catFormTitle').textContent = 'Adicionar categoria';
+  document.getElementById('ctCancelEdit').style.display = 'none';
 });
 
 /* ---------- GERENCIAR CARTÕES ---------- */
@@ -611,6 +1104,10 @@ function startListening(){
       expenses.push(d);
     });
     render();
+    checkUpcomingRecurringNotifications();
+    if(document.getElementById('corriqueirosOverlay').style.display === 'flex'){
+      renderCorriqueiros();
+    }
   }, err=>{
     console.error('Erro ao sincronizar', err);
   });
@@ -631,6 +1128,9 @@ const recBoxEl = document.querySelector('.recbox');
 const fCardClosingField = document.getElementById('fCardClosingField');
 const fCardDueField = document.getElementById('fCardDueField');
 
+function needsBankAccount(method){
+  return method === 'PIX' || method === 'Boleto' || method === 'Transferência' || method === 'Marcado';
+}
 function updateFormVisibility(){
   const method = fPay.value;
   const isMarcado = method === 'Marcado';
@@ -641,6 +1141,7 @@ function updateFormVisibility(){
   fBoletoDueField.classList.toggle('hide', method !== 'Boleto');
   fPayDayField.classList.toggle('hide', !isMarcado);
   fPayDateField.classList.toggle('hide', isCartao || method === 'Boleto' || isMarcado);
+  document.getElementById('fBankField').classList.toggle('hide', !needsBankAccount(method));
   const canParcelar = (isCartao || method === 'Boleto') && !fRec.checked;
   fParcelasField.classList.toggle('hide', !canParcelar);
   if(!canParcelar) document.getElementById('fParc').value = 1;
@@ -692,6 +1193,8 @@ document.getElementById('btnAdd').addEventListener('click', async ()=>{
   const val = parseFloat(document.getElementById('fVal').value);
   const fCardSel = document.getElementById('fCard');
   const cardName = fCardSel.value === '__new__' ? document.getElementById('fCardNew').value.trim() : fCardSel.value;
+  const fBankSel = document.getElementById('fBank');
+  const bankAccount = fBankSel.value === '__new__' ? document.getElementById('fBankNew').value.trim() : fBankSel.value;
   const boletoDue = document.getElementById('fBoletoDue').value;
   const manualPayDate = document.getElementById('fPayDate').value;
   const payDay = parseInt(document.getElementById('fPayDay').value) || 30;
@@ -739,11 +1242,13 @@ document.getElementById('btnAdd').addEventListener('click', async ()=>{
       batch.set(docRef, {
         groupId, category: cat, establishment: est,
         paymentMethod: method, cardName: method==='Cartão de Crédito' ? cardName : '',
+        bankAccount: needsBankAccount(method) ? bankAccount : '',
         purchaseDate: pDate, date: dDate, amount: amount,
         totalAmount: isInstallmentGroup ? val : amount,
         installmentNumber: i+1, installmentsTotal: count,
         isInstallmentGroup: isInstallmentGroup,
         recurring: isRecurring, recurringType: isRecurring ? recType : null,
+        confirmed: isRecurring ? false : true,
         createdAt: Date.now()
       });
     }
@@ -754,6 +1259,9 @@ document.getElementById('btnAdd').addEventListener('click', async ()=>{
       if(!isNaN(closingDay) && !isNaN(dueDay)){
         await cardSettingsRef.doc(sanitizeCardKey(cardName)).set({name:cardName, closingDay, dueDay}, {merge:true});
       }
+    }
+    if(needsBankAccount(method) && bankAccount){
+      await bankAccountsRef.doc(sanitizeBankKey(bankAccount)).set({name:bankAccount}, {merge:true});
     }
   }catch(e){
     alert('Erro ao salvar: ' + e.message);
@@ -766,32 +1274,439 @@ document.getElementById('btnAdd').addEventListener('click', async ()=>{
   document.getElementById('fCard').value='';
   document.getElementById('fCardNew').value='';
   document.getElementById('fCardNew').classList.add('hide');
+  document.getElementById('fBank').value='';
+  document.getElementById('fBankNew').value='';
+  document.getElementById('fBankNew').classList.add('hide');
   fRec.checked = false;
   recOpts.classList.add('hide');
   updateFormVisibility();
 });
 
-async function deleteExpense(id, groupId, all){
-  if(all){
-    if(!confirm('Excluir este e todos os lançamentos futuros deste grupo (parcelas/recorrência)?')) return;
-    const target = expenses.find(e=>e.id===id);
-    const toDelete = expenses.filter(e=> e.groupId===groupId && e.installmentNumber >= target.installmentNumber);
-    const batch = db.batch();
-    toDelete.forEach(e=> batch.delete(expensesRef.doc(e.id)));
-    await batch.commit();
+/* ---------- NOTIFICAÇÕES ---------- */
+document.getElementById('btnNotify').addEventListener('click', async ()=>{
+  if(!('Notification' in window)){
+    alert('Seu navegador não suporta notificações.');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if(perm === 'granted'){
+    alert('Notificações ativadas! Elas vão disparar sempre que você abrir o app e houver um recorrente vencendo em até 2 dias úteis.');
+    checkUpcomingRecurringNotifications();
   } else {
-    if(!confirm('Excluir este lançamento?')) return;
-    await expensesRef.doc(id).delete();
+    alert('Permissão não concedida. Sem isso, não dá pra mostrar notificações.');
+  }
+});
+function isWeekend(dateStr){
+  const p = dateStr.split("-");
+  const d = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+  const day = d.getDay();
+  return day === 0 || day === 6;
+}
+function businessDaysBetween(fromStr, toStr){
+  const p1 = fromStr.split("-"), p2 = toStr.split("-");
+  let d1 = new Date(parseInt(p1[0]), parseInt(p1[1])-1, parseInt(p1[2]));
+  const d2 = new Date(parseInt(p2[0]), parseInt(p2[1])-1, parseInt(p2[2]));
+  if(d2 < d1) return -1;
+  let count = 0;
+  const cur = new Date(d1);
+  while(cur < d2){
+    cur.setDate(cur.getDate()+1);
+    const day = cur.getDay();
+    if(day !== 0 && day !== 6) count++;
+  }
+  return count;
+}
+function checkUpcomingRecurringNotifications(){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  const todayStr = new Date().toISOString().slice(0,10);
+  const pendentes = expenses.filter(e=> e.recurring && e.confirmed === false);
+  pendentes.forEach(e=>{
+    const dias = businessDaysBetween(todayStr, e.date);
+    if(dias >= 0 && dias <= 2){
+      new Notification('Recorrente vencendo em breve', {
+        body: e.establishment+' — '+fmtMoney(e.amount)+' — vence em '+fmtDateShort(e.date)+' ('+dias+' dia(s) útil(eis))',
+        tag: 'rec-'+e.id
+      });
+    }
+  });
+}
+
+/* ---------- GASTOS CORRIQUEIROS (RECORRENTES) ---------- */
+let corViewDate = new Date(); corViewDate.setDate(1);
+let corMode = 'month'; // 'month' | 'grouped' | 'groupDetail'
+let corSelectedGroupId = null;
+const PAY_OPTIONS = ["Dinheiro","Cartão de Crédito","Boleto","PIX","Transferência","Marcado"];
+
+function renderRecurrenceRow(e){
+  const isConfirmed = e.confirmed !== false;
+  if(isConfirmed){
+    return '<tr>'+
+      '<td><span class="cat-dot" style="background:'+getCatColor(e.category)+';"></span>'+getCatName(e.category)+'</td>'+
+      '<td>'+e.establishment+(e.installmentsTotal>1?' <span class="autor">('+e.installmentNumber+'/'+e.installmentsTotal+')</span>':'')+'</td>'+
+      '<td class="valor">'+fmtMoney(e.amount)+'</td>'+
+      '<td class="datecell">'+fmtDateShort(e.date)+'</td>'+
+      '<td class="pay">'+e.paymentMethod+(e.cardName?' · '+e.cardName:'')+(e.bankAccount?' · '+e.bankAccount:'')+'</td>'+
+      '<td class="datecell">'+fmtDateShort(e.date)+'</td>'+
+      '<td><span style="color:var(--familia);font-family:\'Courier New\',monospace;font-size:11px;">✓ Pago</span> '+
+        '<button class="del" onclick="reabrirCorriqueiro(\''+e.id+'\')">editar</button></td>'+
+    '</tr>';
+  }
+  const paySelect = '<select id="corPay_'+e.id+'" onchange="corOnPayChange(\''+e.id+'\')">'+
+    PAY_OPTIONS.map(p=>'<option value="'+p+'"'+(p===e.paymentMethod?' selected':'')+'>'+p+'</option>').join('')+
+    '</select>';
+  const isCartao = e.paymentMethod === 'Cartão de Crédito';
+  const isBank = needsBankAccount(e.paymentMethod);
+  const cardOptions = ['<option value="">Selecione um cartão...</option>','<option value="__new__">+ Novo cartão...</option>']
+    .concat(Object.values(cardSettingsCache).sort((a,b)=>a.name.localeCompare(b.name))
+      .map(c=>'<option value="'+c.name+'"'+(c.name===e.cardName?' selected':'')+'>'+c.name+'</option>'))
+    .join('');
+  const cardCell = '<select id="corCard_'+e.id+'" onchange="corOnCardChange(\''+e.id+'\')">'+cardOptions+'</select>'+
+    '<input type="text" id="corCardNew_'+e.id+'" placeholder="Nome do novo cartão" class="hide" style="margin-top:4px;">'+
+    '<div style="margin-top:4px;display:flex;align-items:center;gap:4px;">'+
+      '<label style="font-family:\'Courier New\',monospace;font-size:9px;color:var(--ink-soft);">Em quantas vezes:</label>'+
+      '<input type="number" id="corParc_'+e.id+'" min="1" max="24" value="1" style="width:50px;">'+
+    '</div>';
+  const bankOptions = ['<option value="">Selecione a conta...</option>','<option value="__new__">+ Nova conta...</option>']
+    .concat(Object.values(bankAccountsCache).sort((a,b)=>a.name.localeCompare(b.name))
+      .map(b=>'<option value="'+b.name+'"'+(b.name===e.bankAccount?' selected':'')+'>'+b.name+'</option>'))
+    .join('');
+  const bankCell = '<select id="corBank_'+e.id+'">'+bankOptions+'</select>'+
+    '<input type="text" id="corBankNew_'+e.id+'" placeholder="Nome do banco" class="hide" style="margin-top:4px;">';
+  return '<tr>'+
+    '<td><span class="cat-dot" style="background:'+getCatColor(e.category)+';"></span>'+getCatName(e.category)+'</td>'+
+    '<td>'+e.establishment+(e.installmentsTotal>1?' <span class="autor">('+e.installmentNumber+'/'+e.installmentsTotal+')</span>':'')+'</td>'+
+    '<td class="valor">'+fmtMoney(e.amount)+'</td>'+
+    '<td class="datecell">'+fmtDateShort(e.date)+'</td>'+
+    '<td>'+paySelect+
+      '<div id="corCardWrap_'+e.id+'" style="margin-top:4px;'+(isCartao?'':'display:none;')+'">'+cardCell+'</div>'+
+      '<div id="corBankWrap_'+e.id+'" style="margin-top:4px;'+(isBank?'':'display:none;')+'">'+bankCell+'</div>'+
+    '</td>'+
+    '<td><input type="date" id="corDate_'+e.id+'" value="'+e.date+'"></td>'+
+    '<td><button class="btn-add" style="padding:4px 10px;font-size:10px;margin-top:0;" onclick="confirmarPagamento(\''+e.id+'\')">Confirmar Pagamento</button></td>'+
+  '</tr>';
+}
+function corOnPayChange(id){
+  const method = document.getElementById('corPay_'+id).value;
+  document.getElementById('corCardWrap_'+id).style.display = method === 'Cartão de Crédito' ? 'block' : 'none';
+  document.getElementById('corBankWrap_'+id).style.display = needsBankAccount(method) ? 'block' : 'none';
+}
+function corOnCardChange(id){
+  const sel = document.getElementById('corCard_'+id);
+  const newInput = document.getElementById('corCardNew_'+id);
+  if(sel.value === '__new__'){
+    newInput.classList.remove('hide');
+    return;
+  }
+  newInput.classList.add('hide');
+  const found = cardSettingsCache[sanitizeCardKey(sel.value)];
+  if(found){
+    const e = expenses.find(x=>x.id===id);
+    const scheduledDate = e ? e.date : new Date().toISOString().slice(0,10);
+    const newDate = computeCardPaymentDate(scheduledDate, found.closingDay, found.dueDay);
+    document.getElementById('corDate_'+id).value = newDate;
   }
 }
+document.addEventListener('change', function(ev){
+  if(ev.target && ev.target.id && ev.target.id.startsWith('corBank_')){
+    const id = ev.target.id.replace('corBank_','');
+    const newInput = document.getElementById('corBankNew_'+id);
+    newInput.classList.toggle('hide', ev.target.value !== '__new__');
+  }
+});
+
+
+function renderCorriqueiros(){
+  document.getElementById('corGroupedBackRow').classList.toggle('hide', corMode !== 'groupDetail');
+  document.getElementById('corPrevMonth').classList.toggle('hide', corMode !== 'month');
+  document.getElementById('corNextMonth').classList.toggle('hide', corMode !== 'month');
+
+  if(corMode === 'month'){
+    document.getElementById('corMonthName').textContent = monthLabel(corViewDate);
+    document.getElementById('corMonthLabel').textContent = monthLabel(corViewDate);
+    const vKey = toKey(corViewDate);
+    const items = expenses.filter(e=> e.recurring && e.date.slice(0,7)===vKey)
+      .sort((a,b)=> a.establishment.localeCompare(b.establishment));
+    const tbody = document.getElementById('corRows');
+    if(items.length===0){
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">Nenhum gasto recorrente previsto para este mês.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(renderRecurrenceRow).join('');
+  }
+  else if(corMode === 'grouped'){
+    document.getElementById('corMonthName').textContent = 'Todos os itens recorrentes';
+    document.getElementById('corMonthLabel').textContent = 'visão agrupada';
+    const groups = {};
+    expenses.filter(e=>e.recurring).forEach(e=>{
+      if(!groups[e.groupId]) groups[e.groupId] = [];
+      groups[e.groupId].push(e);
+    });
+    const tbody = document.getElementById('corRows');
+    const groupIds = Object.keys(groups);
+    if(groupIds.length===0){
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">Nenhum gasto recorrente cadastrado ainda.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = groupIds.map(gid=>{
+      const items = groups[gid].sort((a,b)=>a.date.localeCompare(b.date));
+      const first = items[0];
+      const total = items.length;
+      const confirmados = items.filter(e=>e.confirmed!==false).length;
+      const pendentes = total - confirmados;
+      const totalValor = items.reduce((s,e)=>s+e.amount,0);
+      const tipoTxt = first.recurringType === 'determinado' ? total+'x' : 'indeterminado';
+      return '<tr style="cursor:pointer;" onclick="abrirGrupoRecorrente(\''+gid+'\')">'+
+        '<td><span class="cat-dot" style="background:'+getCatColor(first.category)+';"></span>'+getCatName(first.category)+'</td>'+
+        '<td>'+first.establishment+' <span class="autor">('+tipoTxt+')</span></td>'+
+        '<td class="valor">'+fmtMoney(first.amount)+'/mês</td>'+
+        '<td class="datecell">'+confirmados+' pagos</td>'+
+        '<td class="datecell">'+pendentes+' pendentes</td>'+
+        '<td class="valor">'+fmtMoney(totalValor)+' total</td>'+
+        '<td><button class="del">ver detalhes</button></td>'+
+      '</tr>';
+    }).join('');
+  }
+  else if(corMode === 'groupDetail'){
+    const items = expenses.filter(e=>e.recurring && e.groupId===corSelectedGroupId)
+      .sort((a,b)=>a.date.localeCompare(b.date));
+    const name = items.length ? items[0].establishment : 'Item';
+    document.getElementById('corMonthName').textContent = name;
+    document.getElementById('corMonthLabel').textContent = name;
+    const tbody = document.getElementById('corRows');
+    if(items.length===0){
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">Nenhuma ocorrência encontrada.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(renderRecurrenceRow).join('');
+  }
+}
+function abrirGrupoRecorrente(groupId){
+  corSelectedGroupId = groupId;
+  corMode = 'groupDetail';
+  renderCorriqueiros();
+}
+async function confirmarPagamento(id){
+  const paymentMethod = document.getElementById('corPay_'+id).value;
+  const newDate = document.getElementById('corDate_'+id).value;
+  if(!newDate){ alert('Escolha a data real do pagamento.'); return; }
+  let cardName = '';
+  let bankAccount = '';
+  let parcelas = 1;
+  if(paymentMethod === 'Cartão de Crédito'){
+    const cardSel = document.getElementById('corCard_'+id);
+    cardName = cardSel.value === '__new__' ? document.getElementById('corCardNew_'+id).value.trim() : cardSel.value;
+    if(!cardName){ alert('Escolha ou digite o cartão utilizado.'); return; }
+    parcelas = Math.max(1, parseInt(document.getElementById('corParc_'+id).value) || 1);
+  } else if(needsBankAccount(paymentMethod)){
+    const bankSel = document.getElementById('corBank_'+id);
+    bankAccount = bankSel.value === '__new__' ? document.getElementById('corBankNew_'+id).value.trim() : bankSel.value;
+    if(!bankAccount){ alert('Escolha ou digite de qual conta saiu o pagamento.'); return; }
+  }
+  const e = expenses.find(x=>x.id===id);
+  if(!e) return;
+
+  try{
+    if(parcelas > 1){
+      // vira um parcelamento de cartão de verdade: apaga este lancamento pendente
+      // e cria um novo grupo de X parcelas, sem mexer nos outros meses do recorrente original.
+      let firstPaymentDate = newDate;
+      const found = cardSettingsCache[sanitizeCardKey(cardName)];
+      if(found){
+        firstPaymentDate = computeCardPaymentDate(e.date, found.closingDay, found.dueDay);
+      }
+      const newGroupId = genId();
+      const batch = db.batch();
+      batch.delete(expensesRef.doc(id));
+      let allocated = 0;
+      for(let i=0;i<parcelas;i++){
+        const dDate = addMonthsToStr(firstPaymentDate, i);
+        let amount;
+        const rawPart = Math.round((e.amount/parcelas)*100)/100;
+        if(i===parcelas-1){ amount = Math.round((e.amount - allocated)*100)/100; } else { amount = rawPart; allocated += rawPart; }
+        const docRef = expensesRef.doc();
+        batch.set(docRef, {
+          groupId: newGroupId, category: e.category, establishment: e.establishment,
+          paymentMethod: 'Cartão de Crédito', cardName, bankAccount: '',
+          purchaseDate: e.date, date: dDate, amount,
+          totalAmount: e.amount, installmentNumber: i+1, installmentsTotal: parcelas,
+          isInstallmentGroup: true, recurring: false, recurringType: null,
+          confirmed: true, createdAt: Date.now()
+        });
+      }
+      await batch.commit();
+    } else {
+      await expensesRef.doc(id).update({ paymentMethod, date: newDate, cardName, bankAccount, confirmed: true });
+      if(needsBankAccount(paymentMethod) && bankAccount){
+        await upsertBankAccount(bankAccount);
+      }
+    }
+  }catch(err){
+    alert('Erro ao confirmar pagamento: '+err.message);
+  }
+}
+async function reabrirCorriqueiro(id){
+  if(!confirm('Reabrir este pagamento? Ele volta a ficar pendente e some dos totais da aba principal até confirmar de novo.')) return;
+  try{
+    await expensesRef.doc(id).update({ confirmed: false });
+  }catch(err){
+    alert('Erro ao reabrir: '+err.message);
+  }
+}
+document.getElementById('btnCorriqueiros').addEventListener('click', ()=>{
+  corViewDate = new Date(viewDate);
+  corMode = 'month';
+  document.querySelectorAll('#corViewMode div').forEach(x=>x.classList.remove('active'));
+  document.querySelector('#corViewMode div[data-mode="month"]').classList.add('active');
+  renderCorriqueiros();
+  document.getElementById('corriqueirosOverlay').style.display = 'flex';
+});
+document.getElementById('corriqueirosClose').addEventListener('click', ()=>{
+  document.getElementById('corriqueirosOverlay').style.display = 'none';
+});
+document.getElementById('corPrevMonth').addEventListener('click', ()=>{
+  corViewDate.setMonth(corViewDate.getMonth()-1); renderCorriqueiros();
+});
+document.getElementById('corNextMonth').addEventListener('click', ()=>{
+  corViewDate.setMonth(corViewDate.getMonth()+1); renderCorriqueiros();
+});
+document.getElementById('corViewMode').addEventListener('click', (e)=>{
+  const t = e.target.closest('div[data-mode]'); if(!t) return;
+  corMode = t.dataset.mode;
+  document.querySelectorAll('#corViewMode div').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  renderCorriqueiros();
+});
+document.getElementById('corGroupedBack').addEventListener('click', ()=>{
+  corMode = 'grouped';
+  corSelectedGroupId = null;
+  renderCorriqueiros();
+});
+
+/* ---------- ADICIONAR RECORRENTE MANUALMENTE ---------- */
+document.querySelectorAll('input[name=rcType]').forEach(r=>{
+  r.addEventListener('change', ()=>{
+    document.getElementById('rcMesesField').classList.toggle('hide',
+      document.querySelector('input[name=rcType]:checked').value !== 'determinado');
+  });
+});
+document.getElementById('rcSave').addEventListener('click', async ()=>{
+  const category = document.getElementById('rcCat').value;
+  const establishment = document.getElementById('rcEst').value.trim();
+  const val = parseFloat(document.getElementById('rcVal').value);
+  const startDate = document.getElementById('rcInicio').value;
+  const recType = document.querySelector('input[name=rcType]:checked').value;
+  const recMeses = parseInt(document.getElementById('rcMeses').value) || 12;
+
+  if(!establishment || isNaN(val) || val<=0 || !startDate){
+    alert('Preencha estabelecimento, valor e data de início.');
+    return;
+  }
+  const count = recType === 'determinado' ? recMeses : 36;
+  const groupId = genId();
+  try{
+    const batch = db.batch();
+    for(let i=0;i<count;i++){
+      const dDate = addMonthsToStr(startDate, i);
+      const docRef = expensesRef.doc();
+      batch.set(docRef, {
+        groupId, category, establishment,
+        paymentMethod: 'Dinheiro', cardName: '',
+        purchaseDate: dDate, date: dDate, amount: val,
+        totalAmount: val, installmentNumber: i+1, installmentsTotal: count,
+        isInstallmentGroup: false, recurring: true, recurringType: recType,
+        confirmed: false, createdAt: Date.now()
+      });
+    }
+    await batch.commit();
+  }catch(err){
+    alert('Erro ao criar recorrente: '+err.message);
+    return;
+  }
+  document.getElementById('rcEst').value = '';
+  document.getElementById('rcVal').value = '';
+  document.getElementById('rcInicio').value = '';
+  document.querySelector('input[name=rcType][value=indeterminado]').checked = true;
+  document.getElementById('rcMesesField').classList.add('hide');
+  alert('Recorrente criado! Ele já aparece na lista, pendente de confirmação mês a mês.');
+});
+
+/* ---------- QUAL CARTÃO USAR ---------- */
+function daysBetween(dateStr1, dateStr2){
+  const p1 = dateStr1.split("-"), p2 = dateStr2.split("-");
+  const d1 = new Date(parseInt(p1[0]), parseInt(p1[1])-1, parseInt(p1[2]));
+  const d2 = new Date(parseInt(p2[0]), parseInt(p2[1])-1, parseInt(p2[2]));
+  return Math.round((d2 - d1) / (1000*60*60*24));
+}
+function populateBcCardFilter(){
+  const sel = document.getElementById('bcCardFilter');
+  const prevValue = sel.value;
+  sel.innerHTML = '<option value="">Todos os cartões (ranking)</option>';
+  Object.values(cardSettingsCache).sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c.name;
+    opt.textContent = c.name;
+    sel.appendChild(opt);
+  });
+  if(Array.from(sel.options).some(o=>o.value===prevValue)) sel.value = prevValue;
+}
+function renderBestCard(){
+  const purchaseDate = document.getElementById('bcDate').value;
+  const tbody = document.getElementById('bcRows');
+  if(!purchaseDate){ tbody.innerHTML = ''; return; }
+  const filterName = document.getElementById('bcCardFilter').value;
+  let entries = Object.values(cardSettingsCache);
+  if(entries.length === 0){
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">Nenhum cartão cadastrado ainda. Cadastre em "Gerenciar Cartões".</td></tr>';
+    return;
+  }
+  if(filterName){
+    entries = entries.filter(c=>c.name===filterName);
+  }
+  const results = entries.map(c=>{
+    const dueDate = computeCardPaymentDate(purchaseDate, c.closingDay, c.dueDay);
+    const prazo = daysBetween(purchaseDate, dueDate);
+    return {name: c.name, dueDate, prazo};
+  });
+  results.sort((a,b)=> b.prazo - a.prazo);
+  tbody.innerHTML = results.map((r,i)=>{
+    const highlight = (!filterName && i===0) ? 'background:#EAF3EC;font-weight:700;' : '';
+    return '<tr style="'+highlight+'">'+
+      '<td>'+(!filterName && i===0?'⭐ ':'')+r.name+'</td>'+
+      '<td class="datecell">'+fmtDateShort(r.dueDate)+'</td>'+
+      '<td class="valor">'+r.prazo+' dias</td>'+
+    '</tr>';
+  }).join('');
+}
+document.getElementById('btnBestCard').addEventListener('click', ()=>{
+  if(!document.getElementById('bcDate').value){
+    document.getElementById('bcDate').value = new Date().toISOString().slice(0,10);
+  }
+  populateBcCardFilter();
+  renderBestCard();
+  document.getElementById('bestCardOverlay').style.display = 'flex';
+});
+document.getElementById('bestCardClose').addEventListener('click', ()=>{
+  document.getElementById('bestCardOverlay').style.display = 'none';
+});
+document.getElementById('bcDate').addEventListener('change', renderBestCard);
+document.getElementById('bcCardFilter').addEventListener('change', renderBestCard);
 
 document.getElementById('prevMonth').addEventListener('click',()=>{ viewDate.setMonth(viewDate.getMonth()-1); render(); });
 document.getElementById('nextMonth').addEventListener('click',()=>{ viewDate.setMonth(viewDate.getMonth()+1); render(); });
 document.getElementById('tabs').addEventListener('click',(e)=>{
   const t = e.target.closest('.tab'); if(!t) return;
   activeCat = t.dataset.cat;
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  t.classList.add('active'); render();
+  document.querySelectorAll('.tab').forEach(x=>{
+    x.classList.remove('active');
+    x.style.background = '';
+    x.style.borderColor = '';
+  });
+  t.classList.add('active');
+  if(t.dataset.cat !== 'all'){
+    t.style.background = t.dataset.color;
+    t.style.borderColor = t.dataset.color;
+  }
+  render();
 });
 document.getElementById('viewmode').addEventListener('click',(e)=>{
   const t = e.target.closest('div[data-mode]'); if(!t) return;
@@ -860,26 +1775,27 @@ document.getElementById('restoreFileInput').addEventListener('change', async (ev
   ev.target.value = '';
 });
 
+function isPendingRecurring(e){ return e.recurring && e.confirmed === false; }
 function purchaseContribution(e){ return e.isInstallmentGroup ? (e.installmentNumber===1 ? e.totalAmount : 0) : e.amount; }
 
 function render(){
   document.getElementById('monthName').textContent = monthLabel(viewDate);
   const vKey = toKey(viewDate);
 
-  const purchaseMonthEntries = expenses.filter(e=>e.purchaseDate.slice(0,7)===vKey);
+  const purchaseMonthEntries = expenses.filter(e=>e.purchaseDate.slice(0,7)===vKey && !isPendingRecurring(e));
   const purchaseTotal = purchaseMonthEntries.reduce((s,e)=>s+purchaseContribution(e),0);
   document.getElementById('purchaseTotal').textContent = fmtMoney(purchaseTotal);
   currentDetailLists.compra = purchaseMonthEntries.filter(e=>!e.isInstallmentGroup || e.installmentNumber===1)
     .map(e=>({date:e.purchaseDate, category:e.category, establishment:e.establishment, paymentMethod:e.paymentMethod, cardName:e.cardName, amount:purchaseContribution(e)}));
 
-  const paymentMonthEntries = expenses.filter(e=>e.date.slice(0,7)===vKey);
+  const paymentMonthEntries = expenses.filter(e=>e.date.slice(0,7)===vKey && !isPendingRecurring(e));
   const paymentTotal = paymentMonthEntries.reduce((s,e)=>s+e.amount,0);
   document.getElementById('paymentTotal').textContent = fmtMoney(paymentTotal);
   currentDetailLists.pagamento = paymentMonthEntries.map(e=>({date:e.date, category:e.category, establishment:e.establishment, paymentMethod:e.paymentMethod, cardName:e.cardName, amount:e.amount}));
 
   const nextViewDate = new Date(viewDate); nextViewDate.setMonth(nextViewDate.getMonth()+1);
   const nextKey = toKey(nextViewDate);
-  const nextMonthEntries = expenses.filter(e=>e.date.slice(0,7)===nextKey);
+  const nextMonthEntries = expenses.filter(e=>e.date.slice(0,7)===nextKey && !isPendingRecurring(e));
   const nextMonthTotal = nextMonthEntries.reduce((s,e)=>s+e.amount,0);
   document.getElementById('nextMonthTotal').textContent = fmtMoney(nextMonthTotal);
   currentDetailLists.proximo = nextMonthEntries.map(e=>({date:e.date, category:e.category, establishment:e.establishment, paymentMethod:e.paymentMethod, cardName:e.cardName, amount:e.amount}));
@@ -900,11 +1816,11 @@ function render(){
       else if(e.installmentsTotal>1){ badge = '<span class="badge">'+e.installmentNumber+'/'+e.installmentsTotal+'</span>'; }
       const valorCompra = e.totalAmount;
       const valorParcela = e.amount;
-      const formaTxt = e.paymentMethod + (e.cardName ? ' · '+e.cardName : '');
+      const formaTxt = e.paymentMethod + (e.cardName ? ' · '+e.cardName : '') + (e.bankAccount ? ' · '+e.bankAccount : '');
       return '<tr>'+
         '<td class="datecell">'+fmtDateShort(e.purchaseDate)+'</td>'+
         '<td class="datecell">'+fmtDateShort(e.date)+'</td>'+
-        '<td><span class="cat-dot cat-'+e.category+'"></span>'+CAT_NAMES[e.category]+'</td>'+
+        '<td><span class="cat-dot" style="background:'+getCatColor(e.category)+';"></span>'+getCatName(e.category)+'</td>'+
         '<td>'+e.establishment+badge+'</td>'+
         '<td class="pay">'+formaTxt+'</td>'+
         '<td class="valor">'+fmtMoney(valorCompra)+'</td>'+
@@ -918,15 +1834,14 @@ function render(){
     }).join('');
   }
 
-  const byCat = {1:0,2:0,3:0,4:0,5:0};
+  const byCat = {};
   (viewMode==='pagamento'?paymentMonthEntries:purchaseMonthEntries.filter(e=>!e.isInstallmentGroup||e.installmentNumber===1)).forEach(e=>{
     const v = viewMode==='pagamento' ? e.amount : purchaseContribution(e);
     byCat[e.category]=(byCat[e.category]||0)+v;
   });
-  document.getElementById('footNote').textContent =
-    'Carlos: '+fmtMoney(byCat[1])+'   ·   Lilian: '+fmtMoney(byCat[2])+
-    '   ·   Família/Casa: '+fmtMoney(byCat[3])+'   ·   Outros: '+fmtMoney(byCat[4])+
-    '   ·   PJ: '+fmtMoney(byCat[5]);
+  document.getElementById('footNote').textContent = sortedCategoryEntries()
+    .map(([id,c])=> c.name+': '+fmtMoney(byCat[id]||0))
+    .join('   ·   ');
 }
 
 const today = new Date().toISOString().slice(0,10);
@@ -948,10 +1863,10 @@ function openDetail(type){
     tbody.innerHTML = '<tr><td colspan="5" class="empty">Nada neste recorte.</td></tr>';
   } else {
     tbody.innerHTML = list.map(e=>{
-      const formaTxt = e.paymentMethod + (e.cardName ? ' · '+e.cardName : '');
+      const formaTxt = e.paymentMethod + (e.cardName ? ' · '+e.cardName : '') + (e.bankAccount ? ' · '+e.bankAccount : '');
       return '<tr>'+
         '<td class="datecell">'+fmtDateShort(e.date)+'</td>'+
-        '<td><span class="cat-dot cat-'+e.category+'"></span>'+CAT_NAMES[e.category]+'</td>'+
+        '<td><span class="cat-dot" style="background:'+getCatColor(e.category)+';"></span>'+getCatName(e.category)+'</td>'+
         '<td>'+e.establishment+'</td>'+
         '<td class="pay">'+formaTxt+'</td>'+
         '<td class="valor">'+fmtMoney(e.amount)+'</td>'+
@@ -980,7 +1895,15 @@ window.addEventListener('afterprint', ()=>{
 let editingId = null;
 
 document.getElementById('ePay').addEventListener('change', ()=>{
-  document.getElementById('eCardDaysFields').classList.toggle('hide', document.getElementById('ePay').value !== 'Cartão de Crédito');
+  const method = document.getElementById('ePay').value;
+  document.getElementById('eCardDaysFields').classList.toggle('hide', method !== 'Cartão de Crédito');
+  document.getElementById('eBankField').classList.toggle('hide', !needsBankAccount(method));
+});
+document.getElementById('eBank').addEventListener('change', ()=>{
+  const sel = document.getElementById('eBank');
+  const isNew = sel.value === '__new__';
+  document.getElementById('eBankNew').classList.toggle('hide', !isNew);
+  if(isNew){ document.getElementById('eBankNew').value = ''; }
 });
 document.getElementById('eCard').addEventListener('change', ()=>{
   const sel = document.getElementById('eCard');
@@ -1046,6 +1969,22 @@ function openEdit(id){
     eCardNewInput.value = '';
   }
   document.getElementById('eCardDaysFields').classList.toggle('hide', e.paymentMethod !== 'Cartão de Crédito');
+  document.getElementById('eBankField').classList.toggle('hide', !needsBankAccount(e.paymentMethod));
+  const eBankSel = document.getElementById('eBank');
+  const eBankNewInput = document.getElementById('eBankNew');
+  if(e.bankAccount && Array.from(eBankSel.options).some(o=>o.value===e.bankAccount)){
+    eBankSel.value = e.bankAccount;
+    eBankNewInput.classList.add('hide');
+    eBankNewInput.value = '';
+  } else if(e.bankAccount){
+    eBankSel.value = '__new__';
+    eBankNewInput.value = e.bankAccount;
+    eBankNewInput.classList.remove('hide');
+  } else {
+    eBankSel.value = '';
+    eBankNewInput.classList.add('hide');
+    eBankNewInput.value = '';
+  }
   if(e.cardName){
     const found = cardSettingsCache[sanitizeCardKey(e.cardName)];
     document.getElementById('eCardClosing').value = found ? found.closingDay : '';
@@ -1103,6 +2042,8 @@ document.getElementById('eSave').addEventListener('click', async ()=>{
   const paymentMethod = document.getElementById('ePay').value;
   const eCardSelSave = document.getElementById('eCard');
   const cardName = eCardSelSave.value === '__new__' ? document.getElementById('eCardNew').value.trim() : eCardSelSave.value;
+  const eBankSelSave = document.getElementById('eBank');
+  const bankAccount = eBankSelSave.value === '__new__' ? document.getElementById('eBankNew').value.trim() : eBankSelSave.value;
   const purchaseDate = document.getElementById('eDataCompra').value;
   const paymentDate = document.getElementById('eDataPagto').value;
 
@@ -1115,6 +2056,9 @@ document.getElementById('eSave').addEventListener('click', async ()=>{
       await cardSettingsRef.doc(sanitizeCardKey(cardName)).set({name:cardName, closingDay, dueDay}, {merge:true});
     }
   }
+  if(needsBankAccount(paymentMethod) && bankAccount){
+    await bankAccountsRef.doc(sanitizeBankKey(bankAccount)).set({name:bankAccount}, {merge:true});
+  }
 
   try{
     if(e.recurring){
@@ -1122,6 +2066,7 @@ document.getElementById('eSave').addEventListener('click', async ()=>{
       if(isNaN(newVal) || newVal<=0){ alert('Valor inválido.'); return; }
       await expensesRef.doc(editingId).update({
         category, establishment, paymentMethod, cardName,
+        bankAccount: needsBankAccount(paymentMethod) ? bankAccount : '',
         purchaseDate, date: paymentDate, amount: newVal, totalAmount: newVal
       });
     } else {
@@ -1137,6 +2082,7 @@ document.getElementById('eSave').addEventListener('click', async ()=>{
         const docRef = expensesRef.doc();
         batch.set(docRef, {
           groupId, category, establishment, paymentMethod, cardName,
+          bankAccount: needsBankAccount(paymentMethod) ? bankAccount : '',
           purchaseDate, date: paymentDate, amount: newVal, totalAmount: newVal,
           installmentNumber: 1, installmentsTotal: 1, isInstallmentGroup: false,
           recurring: false, recurringType: null, createdAt: Date.now()
@@ -1154,6 +2100,7 @@ document.getElementById('eSave').addEventListener('click', async ()=>{
           const docRef = expensesRef.doc();
           batch.set(docRef, {
             groupId, category, establishment, paymentMethod, cardName,
+            bankAccount: needsBankAccount(paymentMethod) ? bankAccount : '',
             purchaseDate: purchaseDate, date: dDate, amount, totalAmount: valTotal,
             installmentNumber: i+1, installmentsTotal: numParc, isInstallmentGroup: numParc>1,
             recurring: false, recurringType: null, createdAt: Date.now()
@@ -1169,8 +2116,14 @@ document.getElementById('eSave').addEventListener('click', async ()=>{
   editingId = null;
 });
 
-startListening();
-startListeningCards();
+if(firebaseReady){
+  startListening();
+  startListeningCards();
+  startListeningCategories();
+  startListeningBankAccounts();
+} else {
+  render();
+}
 </script>
 </body>
 </html>
